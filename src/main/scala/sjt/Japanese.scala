@@ -1,6 +1,8 @@
 package sjt
 
 import java.nio.charset.Charset
+import com.atilika.kuromoji.ipadic.Token;
+import com.atilika.kuromoji.ipadic.Tokenizer;
 
 trait Japanese[A] {
   def isHiragana(value: A): Boolean
@@ -35,7 +37,17 @@ object JapaneseInstances{
     def containsHiragana(value: String): Boolean = value.toCharArray.exists(japaneseChar.containsHiragana)
     def containsKatakana(value: String): Boolean = value.toCharArray.exists(japaneseChar.containsKatakana)
     def containsKanji(value: String): Boolean = value.toCharArray.exists(japaneseChar.containsKanji)
-    def isLatin(value: String): Boolean = Charset.forName("US-ASCII").newEncoder().canEncode(value)
+    def isLatin(value: String): Boolean = value.toCharArray.forall(japaneseChar.isLatin)
+  }
+  implicit val kuromojiToken = new Japanese[Token] {
+    def isHiragana(value: Token): Boolean = japaneseString.isHiragana(value.getSurface)
+    def isHalfWidthKatakana(value: Token):Boolean = japaneseString.isHalfWidthKatakana(value.getSurface)
+    def isFullWidthKatakana(value: Token):Boolean = japaneseString.isFullWidthKatakana(value.getSurface)
+    def isKanji(value: Token): Boolean = japaneseString.isKanji(value.getSurface)
+    def containsHiragana(value: Token): Boolean = japaneseString.containsHiragana(value.getSurface)
+    def containsKatakana(value: Token): Boolean = japaneseString.containsKatakana(value.getSurface)
+    def containsKanji(value: Token): Boolean = japaneseString.containsKanji(value.getSurface)
+    def isLatin(value: Token): Boolean = japaneseString.isLatin(value.getSurface)
   }
 }
 object Japanese{

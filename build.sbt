@@ -8,5 +8,6 @@ lazy val root = (project in file(".")).
       version      := "0.1.0-SNAPSHOT"
     )),
     name := "SJT",
-    libraryDependencies += scalaTest % Test
+    libraryDependencies += scalaTest % Test,
+    libraryDependencies += "com.atilika.kuromoji" % "kuromoji-ipadic" % "0.9.0"
   )
