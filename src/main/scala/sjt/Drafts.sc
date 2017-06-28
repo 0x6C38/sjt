@@ -34,3 +34,6 @@ tokens.head.getPronunciation
 import sjt._
 import sjt.JapaneseSyntax._
 import sjt.JapaneseInstances._
+
+"shiっte".indexOf("っ")
+'n'.isFullWidthKatakana

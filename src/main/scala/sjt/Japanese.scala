@@ -35,36 +35,38 @@ object JapaneseInstances{
     def containsKatakana(value: Char): Boolean = isKatakana(value)
     def containsKanji(value: Char): Boolean = isKanji(value)
     def isLatin(value: Char): Boolean = Charset.forName("US-ASCII").newEncoder().canEncode(value)
+
+    def isVowel(value:Char):Boolean = isLatinVowel(value) || isHiraganaVowel(value) || isKatakanaVowel(value) || isKatakanaMiniVowel(value)
+    def isLatinVowel(value:Char):Boolean = value == 'a' ||value == 'e' ||value == 'i' || value == 'o' || value == 'u'
+    def isHiraganaVowel(value:Char):Boolean = value == 'あ' ||value == 'え' ||value == 'い' || value == 'お' || value == 'う'
+    def isKatakanaVowel(value:Char):Boolean = value == 'ア' ||value == 'エ' ||value == 'イ' || value == 'オ' || value == 'ウ'
+    def isKatakanaMiniVowel(value:Char):Boolean = value == 'ェ' || value == 'ョ'
+
     def toRomaji(value: Char): String = {
       val romaji = Array("a", "a","i", "i","u", "u","e", "e","o", "o","ka", "ga","ki", "gi","ku", "gu","ke", "ge","ko", "go","sa", "za","shi", "ji","su", "zu","se", "ze","so", "zo","ta", "da","chi", "ji","tsu", "tsu", "zu","te", "de","to", "do","na","ni","nu","ne","no","ha", "ba", "pa","hi", "bi", "pi","fu", "bu", "pu","he", "be", "pe","ho", "bo", "po","ma","mi","mu","me","mo","a", "ya","u", "yu","o", "yo","ra","ri","ru","re","ro","wa", "wa","wi", "we","o","n","v","ka","ke")
-      if (isKatakana(value) && value != '゛' && value != ',') { //In case of katakana
-        return toRomaji(toHiragana(value))
-      } else if (isHiragana(value)) { //in case of hiragana
-        return romaji(value - 0x3041)
-      } else { //nothing else can be translated
-        return String.valueOf(value)
-      }
+      if (isKatakana(value) && value != 'ー' && value != ',' && value != '・' && value != 'ゃ' && value != 'ャ') return toRomaji(toHiragana(value))  //In case of katakana
+      else if (isHiragana(value)) return if (value == 'っ') "っ" else romaji(value - 0x3041)
+      else if (value == '、') return ","
+      else if (value == '。') return "."
+      else if (value == 'ー') return "う"
+      else if (value == '・') return " "
+      else return String.valueOf(value) //nothing else can be translated
     }
+
     def toKatakana(value:Char):Char = {
-      val translatableRomajiChars = Map('a' -> 'ア','e' -> 'エ','i' -> 'イ','o' -> 'オ' ,'u' -> 'ウ','n' -> 'ン')
+      val translatableRomajiChars = Map('a' -> 'ア','e' -> 'エ','i' -> 'イ','o' -> 'オ' ,'u' -> 'ウ','n' -> 'ン', ',' -> '、')
       if (isHiragana(value) && value != 'n') (value + 0x60).toChar
       else translatableRomajiChars.get(value).getOrElse(value)
     }
+
     def toHiragana(value:Char):Char= value match{
-      case isFullWidthKatakana => (value - 0x60).toChar //if katakana, translate it
-      case isHalfWidthKatakana => (value - 0xcf25).toChar
-      case _ => Map('a' -> 'あ','e' -> 'え','i' -> 'い','o' -> 'お' ,'u' -> 'う','n' -> 'ん').get(value).getOrElse(value) //if translateable romaji, translate, else do nothing
+      case _ if isFullWidthKatakana(value) && value != 'ー' => (value - 0x60).toChar
+      case _ if isHalfWidthKatakana(value) && value != 'ー' => (value - 0xcf25).toChar
+      case _ => Map('a' -> 'あ','e' -> 'え','i' -> 'い','o' -> 'お' ,'u' -> 'う','n' -> 'ん', ',' -> '、').get(value).getOrElse(value) //if translateable romaji, translate, else do nothing
     }
 
-    def extendChar(value:Char):Char = value.toLower match {
-      case 'a' => 'ā'
-      case 'e' => 'ē'
-      case 'i' => 'ī'
-      case 'o' => 'ō'
-      case 'u' => 'ū'
-      //case  "[a-z]" =>
-      case _ => value
-    }
+    def extendChar(value:Char):Char = Map('a' -> 'ā', 'e' -> 'ē', 'i' -> 'ī', 'o'-> 'ō', 'u' -> 'ū').get(value).getOrElse(value)
+    def isExtension(value:Char):Boolean = Map('ゃ' -> 'a', 'ゅ'->'u', 'ょ'->'o', 'ャ' -> 'a', 'ュ' -> 'u', 'ョ' -> 'o').get(value).isDefined
   }
   implicit val japaneseString = new Japanese[String] {
     def isHiragana(value: String): Boolean = value.toCharArray.forall(japaneseChar.isHiragana)
@@ -76,58 +78,26 @@ object JapaneseInstances{
     def containsKanji(value: String): Boolean = value.toCharArray.exists(japaneseChar.containsKanji)
     def isLatin(value: String): Boolean = value.toCharArray.forall(japaneseChar.isLatin)
 
-    //def toRomaji(value: String): String =  new Tokenizer().tokenize(value).asScala.toArray.flatMap(_.getPronunciation.map(japaneseChar.toRomaji(_))).mkString
-    def localTokenToRomaji(value: Token) = value.getPronunciation.foldLeft("") { (acc: String, currentV: Char) =>
-      if (!acc.isEmpty && acc.last == 'ッ') {
-        val nextChar  = japaneseChar.toRomaji(currentV)
-        acc.init + nextChar + nextChar
-      }
-      else if (currentV == 'ー') acc.init + japaneseChar.extendChar(japaneseChar.toRomaji(currentV).charAt(0))
+    def localTokenToRomaji(value: Token): String = {if (value.getPronunciation != "*") value.getPronunciation else  value.getSurface}.foldLeft("") { (acc: String, currentV: Char) =>
+      if (!acc.isEmpty && (acc.last == 'ッ' || acc.last == 'っ')) acc.init + japaneseChar.toRomaji(currentV).charAt(0) + japaneseChar.toRomaji(currentV)
+      else if (currentV == 'ー' || (!acc.isEmpty && japaneseChar.isLatinVowel(acc.last) && currentV == 'ー' || currentV == 'う')) {if (acc.init.lastOption.getOrElse('∑') == 'i') acc.init.init + "y" else acc.init} + japaneseChar.extendChar(japaneseChar.toRomaji(acc.last).charAt(0))
+      else if (japaneseChar.isExtension(currentV) && (!acc.isEmpty && (japaneseChar.isLatinVowel(acc.last) || japaneseChar.isLatinVowel(acc.last)))) acc.init + extendString(currentV)
+      else if (japaneseChar.isVowel(currentV) && (!acc.isEmpty && !acc.init.isEmpty && acc.init.last == 'j'))acc.init + japaneseChar.toRomaji(currentV)
       else acc + japaneseChar.toRomaji(currentV)
     }
-//    def grammarToString(grammar: String, value: String, isLast: Boolean): String = {
-//      val result = value
-//
-//      val isPrefix = "接頭詞" == grammar
-//      val isAuxiliaryVerb = "助動詞" == grammar
-//      val isPunctuation = "記号" == grammar
-//      val isDesu = "desu" == value
-//
-//      val shouldSeparateNext = !(isPrefix || isAuxiliaryVerb || isPunctuation || isLast)
-//      val shouldPrefix = isDesu
-//      val nextSeparator = if (shouldSeparateNext) " " else ""
-//      val beforeSeparator = if (shouldPrefix) " " else ""
-//      beforeSeparator + value + nextSeparator
-//    }
+    def extendString(current:Char):Char = Map('ゃ' -> 'a', 'ゅ'->'u', 'ょ'->'o', 'ャ' -> 'a', 'ュ' -> 'u', 'ョ' -> 'o').get(current).getOrElse(current)
+
 
     def toRomaji(value: String): String  = {
       val tokens = new Tokenizer().tokenize(value).asScala
       def romanize(acc: String, currentV: Token):String = {
-        if (currentV.getAllFeaturesArray.head == "助動詞" && currentV.getAllFeaturesArray.head != "デス") acc + localTokenToRomaji(currentV)
+        if (acc.lastOption.getOrElse('∑') == 'っ') acc.init + localTokenToRomaji(currentV).head + localTokenToRomaji(currentV)
+        else if ((currentV.getAllFeaturesArray.headOption.getOrElse(".") == "助動詞" && currentV.getPronunciation != "デス") || (currentV.getAllFeaturesArray.headOption.getOrElse(".") == "助詞" && currentV.getPronunciation == "テ")) acc + localTokenToRomaji(currentV)
         else acc + " " + localTokenToRomaji(currentV)
       }
-      romanize(
-        tokens.init.foldLeft("") { (acc: String, currentV: Token) =>
-         romanize(acc, currentV)
-        }
-          + " ", tokens.last).trim
+      romanize(tokens.init.foldLeft("") { (acc: String, currentV: Token) => romanize(acc, currentV) } + "", tokens.last).trim
     }
 
-//    def toRomaji(value: String): String = {
-//      val tokens = new Tokenizer().tokenize(value).asScala
-//      if (!isLatin(value)){
-//        val romajis = tokens.map(t => localTokenToRomaji(t))
-//
-//        val grammars = tokens.map(t => (t.getAllFeaturesArray.head))
-//        val zipped2 = romajis zip grammars
-//
-//        val finalValues = zipped2.init.map(tuple => grammarToString(tuple._2, tuple._1, false))
-//
-//        finalValues.mkString
-//      }else{
-//        value
-//      }
-//    }
     def toKatakana(value: String): String =  ???
     def toHiragana(value: String): String = ???
   }
@@ -140,10 +110,9 @@ object JapaneseInstances{
     def containsKatakana(value: Token): Boolean = japaneseString.containsKatakana(value.getSurface)
     def containsKanji(value: Token): Boolean = japaneseString.containsKanji(value.getSurface)
     def isLatin(value: Token): Boolean = japaneseString.isLatin(value.getSurface)
-    //def toRomaji(value: Token): String = value.getSurface.flatMap(japaneseChar.toRomaji)
-    def toRomaji(value: Token): String = value.getPronunciation.foldLeft("") { (acc: String, currentV: Char) =>
-      if (acc.last == 'ッ') acc.init + japaneseChar.toRomaji(currentV) + japaneseChar.toRomaji(currentV)
-      else if (currentV == 'ー') acc.init + japaneseChar.extendChar(japaneseChar.toRomaji(currentV).charAt(0))
+    def toRomaji(value: Token): String = {if (value.getPronunciation != "*") value.getPronunciation else  value.getSurface}.foldLeft("") { (acc: String, currentV: Char) =>
+      if (!acc.isEmpty && (acc.last == 'ッ' || acc.last == 'っ')) acc.init + japaneseChar.toRomaji(currentV).charAt(0) + japaneseChar.toRomaji(currentV)
+      else if (currentV == 'ー' || (!acc.isEmpty && japaneseChar.isLatinVowel(acc.last) && currentV == 'ー' || currentV == 'う')) {if (acc.init.lastOption.getOrElse('∑') == 'i') acc.init.init + "y" else acc.init} + japaneseChar.extendChar(japaneseChar.toRomaji(acc.last).charAt(0))
       else acc + japaneseChar.toRomaji(currentV)
     }
     def toKatakana(value: Token): Token =  ??? //value.getReading.flatMap(japaneseChar.toRomaji)
@@ -191,36 +160,70 @@ object Main {
     import JapaneseInstances._
     import JapaneseSyntax._
 
-    println("--Chars--")
+    println("--Chars: Hiragana--")
     println("Hiragana [Char] す to romaji = " + 'す'.toRomaji)
     println("Hiragana [Char] す to katakana = " + 'す'.toKatakana)
+    println("--Chars: Katakana--")
     println("Katakana [Char] ス to romaji = " + 'ス'.toRomaji)
     println("Katakana [Char] ス to Hiragana = " + 'ス'.toHiragana)
+    println("--Chars: Special--")
+    println("Katakana [Char] ッ to romaji = " + 'ッ'.toRomaji)
+    println("Katakana [Char] ー to romaji = " + 'ー'.toHiragana)
+    println("Katakana [Char] ッ to hiragana = " + 'ッ'.toHiragana)
+    println("Katakana [Char] ー to hiragana = " + 'ー'.toHiragana)
+    println("--Chars: Romaji--")
     println("Romaji   [Char] n to Hiragana = " + 'n'.toHiragana)
-    println('ん' == 'n'.toHiragana)
     println("Romaji   [Char] o to Katakana = " + 'o'.toKatakana)
+    println("Romaji   [Char] j to Katakana = " + 'j'.toKatakana)
 
-    println("--Strings--")
-    println("Hiragana [String] to romaji = " + "おすしがたべたいです".toRomaji)
-    println("Kanji    [String] to romaji = " + "わたしはかわいいです".toRomaji)
-    println("Kanji    [String] to romaji = " + "お寿司が食べたいです".toRomaji)
+    println("--Strings: Kanji Sentences--")
     println("Kanji    [String] to romaji = " + "私は可愛いです".toRomaji)
+    println("Kanji    [String] to romaji = " + "お寿司が食べたいです".toRomaji)
+    println("--Strings: Hiragana Sentences--")
+    println("Hiragana [String] to romaji = " + "おすしがたべたいです".toRomaji)
+    println("Hiragana [String] to romaji = " + "わたしはかわいいです".toRomaji)
+    println("--Strings: Katakana Sentences--")
     println("Katakana [String] to romaji = " + "オスシガタベタイデス".toRomaji)
     println("Katakana [String] to romaji = " + "ワタシハカワイイデス".toRomaji)
+    println("--Strings: Single Katakana Words--")
+    println("Katakana [String] to romaji = " + "ニュース".toRomaji)
+    println("--Strings: Single Hiragana Words--")
+    println("Hiragana [String] to romaji = " + "ぎゅうにゅう".toRomaji)
+    println("--Strings: Single Words Kanji--")
+    println("Kanji    [String] to romaji = " + "可愛い".toRomaji)
+    println("Kanji    [String] to romaji = " + "私".toRomaji)
+    println("Kanji    [String] to romaji = " + "大きな".toRomaji)
+    println("--Strings: Single Words Kanji Diphthong--")
+    println("Kanji    [String] to romaji = " + "東京".toRomaji)
+    println("Kanji    [String] to romaji = " + "牛乳".toRomaji)
+    println("Kanji    [String] to romaji = " + "喋ります".toRomaji)
+    println("Katakana [String] to romaji = " + "ジャク".toRomaji)
+    println("--Strings: Single Words Hiragana--")
+    println("Kanji    [String] to romaji = " + "こと".toRomaji)
+    println("--Strings: Single Words Katakana--")
+    println("Katakana [String] to romaji = " + "コーヒー".toRomaji)
+    println("Katakana [String] to romaji = " + "リグオブレジェンド".toRomaji)
+    println("--Strings: Special--")
+    println("Katakana [String] to romaji = " + "リーグ・オブ・レジェンド".toRomaji)
+    println("Katakana [String] to romaji = " + "リーグ@オブ@レジェンド".toRomaji)
 
-    //println("す".toKatakana)
+    //println("Kanji    [String] to hiragana = " + "大きな".toHiragana)
+    //println("Kanji    [String] to katakana = " + "大きな".toKatakana)
+
+    val t1 = System.currentTimeMillis()
+    println("Kanji    [String] to romaji = " + "皆さんは日本の四つの大きな島の名前を知っていますか。日本には東京のような、世界によく知られている都市がたくさんありますが、皆さんはどんな都市名前を聞きたことがありますか。".toRomaji) //467 vs 495
+    val t2 = System.currentTimeMillis()
+    val deltaT = t2-t1
+    println(s"Δt = $deltaT")
 
 
-    printAllFeatures("お寿司が食べたいです")
     println("-----------------")
-    printAllFeatures("私は可愛いです")
+    printAllFeatures("リーグ@オブ@レジェンド")
+
   }
-  def printAllFeatures(s:String):Unit = new Tokenizer().tokenize(s).asScala.toArray.foreach(t => println(t.getSurface() + ": " + t.getAllFeatures))
-  //flatMap(_.toRomaji)
+  def printAllFeatures(s:String):Unit = new Tokenizer().tokenize(s).asScala.toArray.foreach(t => println(t.getSurface() + ": " + t.getAllFeatures + " | Pronunciation: " + t.getPronunciation))
+
   def strToRomaji(s: String):Unit = {
-    import JapaneseInstances._
-    import JapaneseSyntax._
-    //new Tokenizer().tokenize(s).asScala.toArray.flatMap(_.getPronunciation)
     new Tokenizer().tokenize(s).asScala.toArray.foreach(_.getAllFeatures)
   }
 }
