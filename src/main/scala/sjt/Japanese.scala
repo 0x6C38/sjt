@@ -81,7 +81,13 @@ object JapaneseInstances{
     def localTokenToRomaji(value: Token): String = {if (value.getPronunciation != "*") value.getPronunciation else  value.getSurface}.foldLeft("") { (acc: String, currentV: Char) =>
       if (!acc.isEmpty && (acc.last == 'ッ' || acc.last == 'っ')) acc.init + japaneseChar.toRomaji(currentV).charAt(0) + japaneseChar.toRomaji(currentV)
       else if (currentV == 'ー' || (!acc.isEmpty && japaneseChar.isLatinVowel(acc.last) && currentV == 'ー' || currentV == 'う')) {if (acc.init.lastOption.getOrElse('∑') == 'i') acc.init.init + "y" else acc.init} + japaneseChar.extendChar(japaneseChar.toRomaji(acc.last).charAt(0))
-      else if (japaneseChar.isExtension(currentV) && (!acc.isEmpty && (japaneseChar.isLatinVowel(acc.last) || japaneseChar.isLatinVowel(acc.last)))) acc.init + extendString(currentV)
+      else if (japaneseChar.isExtension(currentV) && (!acc.isEmpty && (japaneseChar.isLatinVowel(acc.last)))){
+        if(acc.init.lastOption != 'j') {
+          acc + extendString(currentV)
+        } else { //acc.init
+          acc.init + extendString(currentV)
+        }
+      }
       else if (japaneseChar.isVowel(currentV) && (!acc.isEmpty && !acc.init.isEmpty && acc.init.last == 'j'))acc.init + japaneseChar.toRomaji(currentV)
       else acc + japaneseChar.toRomaji(currentV)
     }
@@ -194,13 +200,14 @@ object Main {
     println("Kanji    [String] to romaji = " + "私".toRomaji)
     println("Kanji    [String] to romaji = " + "大きな".toRomaji)
     println("--Strings: Single Words Kanji Diphthong--")
-    println("Kanji    [String] to romaji = " + "東京".toRomaji)
-    println("Kanji    [String] to romaji = " + "牛乳".toRomaji)
+    println("Kanji    [String] to romaji = " + "東京".toRomaji) //incorrect
+    println("Kanji    [String] to romaji = " + "牛乳".toRomaji) //incorrect
     println("Kanji    [String] to romaji = " + "喋ります".toRomaji)
     println("Katakana [String] to romaji = " + "ジャク".toRomaji)
+    println("Katakana [String] to romaji = " + "ニャンコ".toRomaji) //incorrect
     println("--Strings: Single Words Hiragana--")
     println("Kanji    [String] to romaji = " + "こと".toRomaji)
-    println("--Strings: Single Words Katakana--")
+    println("--Strings: Single Words Hiragana--")
     println("Katakana [String] to romaji = " + "コーヒー".toRomaji)
     println("Katakana [String] to romaji = " + "リグオブレジェンド".toRomaji)
     println("--Strings: Special--")
