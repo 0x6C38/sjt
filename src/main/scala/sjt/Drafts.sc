@@ -55,8 +55,8 @@ def printDebug(s: String): Unit = {
   println(s"$s starts With extended i-consonant: " + Syllable.swEIC(s))
   println(s"$s starts With extended vowel: " + Syllable.swEV(s))
   println(s"$s starts With extended consonant + vowel: " + Syllable.swECEV(s))
-  println(s"$s to romaji[Old]: " + Kana.kanaSilableToRomaji(s))
   println(s"$s to romaji[New]: " + Kana.kanaToRomaji((s)))
+  println(s"$s to Hiragana: " + Kana.romajiToHiragana((s)))
 
   println("---------------------------")
 
@@ -75,6 +75,26 @@ val example8 = "とうきょう"
 val example9 = "とうきょうきょうと"
 val example10 = "とう#きょう"
 val example11 = "とう#$きょう"
+val example12 = "to"
+val example13 = "k"
+val example14 = ""
+val example15 = " "
+val example16 = "@"
+val example17 = "ki"
+
+val example18 = "kyō"
+val example19 = "tō"
+val example20= "gyu"
+val example21 = "gyū"
+val example22 = "tta"
+val example23 = "ggyū"
+val example24 = "ttō"
+val example25 = "tōkyō"
+val example26 = "tōkyōkyōto"
+val example27 = "tō#kyō"
+val example28 = "tō#$kyō"
+val example29 = "osaka" //does it assume its not valid romaji? make a valid romaji function
+val example30 = "arasuka"
 
 printDebug(example1)
 printDebug(example2)
@@ -87,6 +107,25 @@ printDebug(example8)
 printDebug(example9)
 printDebug(example10)
 printDebug(example11)
+printDebug(example12)
+printDebug(example13)
+printDebug(example14)
+printDebug(example15)
+printDebug(example16)
+printDebug(example17)
+printDebug(example18)
+printDebug(example19)
+printDebug(example20)
+printDebug(example21)
+printDebug(example22)
+printDebug(example23)
+printDebug(example24)
+printDebug(example25)
+printDebug(example26)
+printDebug(example27)
+printDebug(example28)
+printDebug(example29)
+printDebug(example30)
 
 //---TODO: Make every function in Syllable work for Romaji
 //---TODO: Move every function in Kana into the appropriate Japanese type class
