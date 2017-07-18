@@ -67,7 +67,7 @@ object Kana{
     , 'お' -> "o", 'こ' -> "ko", 'そ' -> "so", 'と' -> "to", 'の' -> "no", 'ほ' -> "ho", 'も' -> "mo", 'よ' -> "yo", 'ろ' -> "ro", 'を' -> "wo"
     , 'ん' -> "n")
   //---- Hiragana Diacritics
-  val diacriticsHM: Map[Char, String] = Map('が' -> "ga", 'ざ' -> "sa", 'だ' -> "da", 'ば' -> "ba", 'ぱ' -> "pa"
+  val diacriticsHM: Map[Char, String] = Map('が' -> "ga", 'ざ' -> "za", 'だ' -> "da", 'ば' -> "ba", 'ぱ' -> "pa"
     , 'ぎ' -> "gi", 'じ' -> "ji", 'ぢ' -> "ji", 'び' -> "bi", 'ぴ' -> "pi"
     , 'ぐ' -> "gu", 'ず' -> "zu", 'づ' -> "dzu", 'ぶ' -> "bu", 'ぷ' -> "pu"
     , 'げ' -> "ge", 'ぜ' -> "ze", 'で' -> "de", 'べ' -> "be", 'ぺ' -> "pe"
@@ -86,7 +86,7 @@ object Kana{
     , 'ン' -> "n")
   val nonDiacriticKatakana: List[Char] = nonDiacriticKM.keySet.toList
   //---- Katakana Diacritics
-  val diacriticsKM: Map[Char, String] = Map('ガ' -> "ga", 'ザ' -> "sa", 'ダ' -> "da", 'バ' -> "ba", 'パ' -> "pa"
+  val diacriticsKM: Map[Char, String] = Map('ガ' -> "ga", 'ザ' -> "za", 'ダ' -> "da", 'バ' -> "ba", 'パ' -> "pa"
     , 'ギ' -> "gi", 'ジ' -> "ji", 'ヂ' -> "ji", 'ビ' -> "bi", 'ピ' -> "pi"
     , 'グ' -> "gu", 'ズ' -> "zu", 'ヅ' -> "dzu", 'ブ' -> "bu", 'プ' -> "pu"
     , 'ゲ' -> "ge", 'ゼ' -> "ze", 'デ' -> "de", 'ベ' -> "be", 'ペ' -> "pe"
@@ -107,9 +107,14 @@ object Kana{
   val romaji: List[String] = romajiM.keySet.toList
   val kana: List[Char] = kanaM.keySet.toList
 
+  val threeLKanaM:Map[Char,String] = kanaM.filter{case(k:Char,v:String) => v.length == 3}
+  val threeLRomaji:List[String] = threeLKanaM.map{case(k,v) => v}.toList
+  def is3LRomaji(s:String):Boolean = s != "" && threeLRomaji.contains(s)
+
   val kanaConsonants:List[Char] = kana diff kanaVowels
-  val romajiConsonants:List[String] = romaji diff romajiVowels.map{_.toString}
   def isKanaConsonant(c:Char) = kanaConsonants.contains(c)
+
+  val romajiConsonants:List[String] = romaji diff romajiVowels.map{_.toString}
   def isRomajiConsonant(c:Char) = romajiConsonants.exists(r => r == c.toString)
   def isRomajiConsonant(s:String) = romajiConsonants.contains(s)
 
@@ -122,7 +127,7 @@ object Kana{
   // --Katakana
   val smallKatakanaYsM: Map[Char,String]= Map('ャ'->"ya" , 'ュ'->"yu" , 'ョ'->"yo" )
   val smallKatakanaYs: List[Char]= smallKatakanaYsM.keySet.toList //List('ャ', 'ュ', 'ョ')
-  def isKatakanaSmallY(c: Char): Boolean = smallHiraganaYs.contains(c) //c == 'ャ' || c == 'ュ' || c == 'ョ'
+  def isKatakanaSmallY(c: Char): Boolean = smallKatakanaYs.contains(c) //c == 'ャ' || c == 'ュ' || c == 'ョ'
   // --General
   def isSmallY(c: Char): Boolean = isHiraganaSmallY(c) || isKatakanaSmallY(c)
   val smallYsM: Map[Char,String]= smallHiraganaYsM ++ smallKatakanaYsM
@@ -172,13 +177,14 @@ object Kana{
   // REVISE THESE 3
   def makeDiphthongH(iConsonantH:Char, smallYH:Char) =iConsonantsHM.get(iConsonantH).getOrElse(iConsonantH.toString).toCharArray.head + smallYsM.get(smallYH).getOrElse(smallYH.toString)
   def makeDiphthongK(iConsonantK:Char, smallYK:Char) =iConsonantsKM.get(iConsonantK).getOrElse(iConsonantK.toString).toCharArray.head + smallYsM.get(smallYK).getOrElse(smallYK.toString)
+  //def makeDiphthongR(iConsonantR:Char, smallRK:Char) =iConsonantsRM.get(iConsonantR).getOrElse(iConsonantR.toString).toCharArray.head + smallYsM.get(smallRK).getOrElse(smallRK.toString)
   def makeDiphthong(iConsonant:Char, smallY:Char) = if (iConsonant.isHiragana) makeDiphthongH(iConsonant,smallY) else makeDiphthongK(iConsonant,smallY)
 
 
   val stdDiphthongableHs: List[Char] = iNormalConsonantsHM.keySet.toList diff List('し', 'ち')
   val stdDiphthongableKs: List[Char] = iNormalConsonantsKM.keySet.toList diff List('シ', 'チ')
-  val stdDiphthongableDiacriticsHs: List[Char] = iConsonantDiacriticsHM.keySet.toList diff List('し', 'ち')
-  val stdDiphthongableDiacriticsKs: List[Char] = iConsonantDiacriticsKM.keySet.toList diff List('シ', 'チ')
+  val stdDiphthongableDiacriticsHs: List[Char] = iConsonantDiacriticsHM.keySet.toList diff List('じ', 'ぢ') //prev: diff List('し', 'ち')
+  val stdDiphthongableDiacriticsKs: List[Char] = iConsonantDiacriticsKM.keySet.toList diff List('ジ', 'ヂ')
 
   val stdYoonM: Map[String, String] = {for { x <- stdDiphthongableHs; y <- smallHiraganaYs }
     yield (x.toString+y.toString -> makeDiphthong(x,y))}.toMap
@@ -189,8 +195,8 @@ object Kana{
   val nonStdYoonHM: Map[String, String] = Map("じ"-> "ji", "ぢ" -> "ji"
     ,"しゃ"-> "sha","しゅ"-> "shu","しょ"-> "sho"
     ,"ちゃ"-> "sha","ちゅ"-> "chu","ちょ"-> "sho"
-    ,"じゃ"-> "ja","じゅ"-> "ju","じょ"-> "jo"
-    ,"ぢゃ"-> "ja","ぢゅ"-> "ju","ぢょ"-> "jo")
+    ,"じゃ"-> "ja","じゃ"-> "ju","じょ"-> "jo", "じぇ" -> "je"
+    ,"ぢゃ"-> "ja","ぢゅ"-> "ju","ぢょ"-> "jo", "ぢぇ" -> "je") //added je
   val yoonHiraganaM:Map[String,String] = stdYoonM ++ nonStdYoonHM ++ stdYooniacriticsHM
   val yoonHiragana:List[String] = yoonHiraganaM.keySet.toList
 
@@ -203,8 +209,8 @@ object Kana{
   val nonStdYoonKatakanaM: Map[String, String] = Map("ジ"-> "ji", "ヂ" -> "ji"
     ,"シャ"-> "sha","シュ"-> "shu","ショ"-> "sho"
     ,"チャ"-> "sha","チュ"-> "chu","チョ"-> "sho"
-    ,"ジャ"-> "ja","ジュ"-> "ju","ジョ"-> "jo"
-    ,"ヂャ"-> "ja","ヂュ"-> "ju","ヂョ"-> "jo")
+    ,"ジャ"-> "ja","ジュ"-> "ju","ジョ"-> "jo", "ジェ" -> "je"
+    ,"ヂャ"-> "ja","ヂュ"-> "ju","ヂョ"-> "jo","ヂェ" -> "je") //added je
 
   val yoonKatakanaM:Map[String,String] = stdYoonKatakanaM ++ nonStdYoonKatakanaM ++ stdYoonKatakanaDiacriticsM
   val yoonKatakana:List[String] = yoonKatakanaM.keySet.toList
@@ -229,11 +235,11 @@ object Kana{
   val extendedVowelYoonRomaji:List[String] = extendedVowelYoonRomajiM.keySet.toList
   def isExtendedVowelYoonRomaji(s:String):Boolean = s != "" && extendedVowelYoonRomaji.contains(s)
 
-  val allKanaAndExtendedConsonantM: Map[String, String] = allKanaM ++ allKanaM.map{case (k,v) => (extendConsonant(k),extendConsonant(v))}
-  val allKanaAndExtendedVowelsM: Map[String, String] = allKanaM ++ allKanaM.map{case (k,v) => (extendVowel(k),extendVowel(v))}
+  val allKanaAndExtendedConsonantM: Map[String, String] = allKanaM.map{case (k,v) => (extendConsonant(k),extendConsonant(v))} ++ allKanaM
+  val allKanaAndExtendedVowelsM: Map[String, String] = allKanaM.map{case (k,v) => (extendVowel(k),extendVowel(v))} ++ allKanaM
 
-  val allKanaAndAllKanaExtendedVowelsAndConsonantsM: Map[String, String] = (allKanaAndExtendedConsonantM ++ allKanaAndExtendedConsonantM.map{case (k,v) => (extendVowel(k),extendVowel(v))}) ++
-    allKanaAndExtendedVowelsM ++ allKanaAndExtendedVowelsM.map{case (k,v) => (extendConsonant(k),extendConsonant(v))}
+  val allKanaAndAllKanaExtendedVowelsAndConsonantsM: Map[String, String] = (allKanaAndExtendedConsonantM.map{case (k,v) => (extendVowel(k),extendVowel(v))} ++ allKanaAndExtendedConsonantM) ++
+                                                                           allKanaAndExtendedVowelsM.map{case (k,v) => (extendConsonant(k),extendConsonant(v))} ++ allKanaAndExtendedVowelsM
 
   val allRomajiAndAllRomajiExtendedVowelsAndConsonantsM: Map[String, String] =allKanaAndAllKanaExtendedVowelsAndConsonantsM.map { case (k, v) => (v, k) }
 
@@ -242,7 +248,7 @@ object Kana{
 
 
   @tailrec
-  def splitIntoSyllables(input: String, l: List[Syllable]): List[Syllable] = {
+  def splitIntoSyllables(input: String, l: List[Syllable] = Nil): List[Syllable] = {
     val nS = Syllable.nextSyllable(input)
     if (input.isEmpty) l
     else splitIntoSyllables(input.drop(nS.text.length), nS :: l)
@@ -262,40 +268,79 @@ object Syllable{
   // Matching
   //C = Consonant; EC = Extended Consonant; IC = i-Consonant = Palatalized Consonant
   //V = Vowel; EV = Extended Vowel; sW = starts With
-  def sWC(s: String): Boolean = s != "" && ((s.isHiragana || s.isKatakana && s.headOption.isDefined && Kana.isKanaConsonant(s.head)) || (s.headOption.isDefined && s.head == 'n') || (s.length >= 2 && Kana.isRomajiConsonant(s.take(2)))) //(1) / (2)
+  def sWRC3L(s: String): Boolean = s != "" &&  (s.length >= 3 && Kana.is3LRomaji(s.take(3))) //(3)
+  def sWRC(s: String): Boolean = s != "" &&  (s.length >= 2 && Kana.isRomajiConsonant(s.take(2))) //(2)
+  def sWKC(s: String): Boolean = s != "" && ((s.isHiragana || s.isKatakana && s.headOption.isDefined && Kana.isKanaConsonant(s.head))) //(1)
+  def sWC(s: String): Boolean = s != "" && ((s.isHiragana || s.isKatakana && s.headOption.isDefined && Kana.isKanaConsonant(s.head)) ||  (s.length >= 2 && Kana.isRomajiConsonant(s.take(2)))) //(1) / (2)
   def sWIC(s: String): Boolean = s.headOption.isDefined && Kana.isIConsonant(s.head) || (s.length >= 2 && Kana.isIConsonantR(s.take(2)))//(1) / (2)
   def sWSmallY(s: String): Boolean = s.headOption.isDefined && Kana.isSmallY(s.head) //(1)
-  def swYoon(s: String): Boolean = (s.length >= 2 && sWIC(s) && sWSmallY(s.tail)) || (Kana.isYoonRomaji(s.take(3))) //(2) / (2-3)
-  def swEVYoon(s: String): Boolean = (s.length >= 2 && Kana.isExtendedVowelYoonRomaji(s.take(3)) || Kana.isExtendedVowelYoonRomaji(s.take(2))) || (s.length >= 3 && swYoon(s) && Kana.isVowelExtension(s(2))) //(3) / (2-3)
-  def swECYoon(s: String): Boolean = (s.length >= 3 && swEIC(s) && Kana.isSmallY(s(2))) || (s.length >=2 && s.head == s(1) && swYoon(s.tail)) //(3) / (2) // bug?? swEIC(s)
+  def sw2LRomajiYoon(s: String): Boolean = s.length >= 2 && Kana.isYoonRomaji(s.take(2)) || Kana.isExtendedVowelYoonRomaji(s.take(2)) //(2)
+  def sw3LRomajiYoon(s: String): Boolean = s.length >= 3 && (Kana.isYoonRomaji(s.take(3)) || Kana.isExtendedVowelYoonRomaji(s.take(3))) //(3)
+  def swRomajiYoon(s: String): Boolean = sw2LRomajiYoon(s) || sw3LRomajiYoon(s) //(2-3)
+  def swKanaYoon(s: String): Boolean = (s.length >= 2 && sWIC(s) && sWSmallY(s.tail)) //(2)
+  def swYoon(s: String): Boolean = swKanaYoon(s) || swRomajiYoon(s) //(2) / (2-3)
+  def sw2LRomajiEVYoon(s: String): Boolean = (s.length >= 2 && Kana.isExtendedVowelYoonRomaji(s.take(2))) //(2)
+  def sw3LRomajiEVYoon(s: String): Boolean = (s.length >= 3 && Kana.isExtendedVowelYoonRomaji(s.take(3))) //(3)
+  def swEVYoon(s: String): Boolean = (sw3LRomajiEVYoon(s)) || (s.length >= 3 && swYoon(s) && Kana.isVowelExtension(s(2))) //(3) / (2-3)°° (3) letters only now. Must match previous
+  def swECYoonKana(s: String): Boolean = (s.length >= 3 && swEC(s) && swYoon(s.tail)) // (3), but its actually 2 if you consider っじ
+  def swECYoonRomaji(s: String): Boolean = (s.length >=3 && s.head == s(1) && swYoon(s.tail)) //(3)
+  def swECYoonRomaji4L(s: String): Boolean = (s.length >=4 && s.head == s(1) && swYoon(s.tail) && s(3) != 'n') //(4)
+  def swECYoon(s: String): Boolean = swECYoonKana(s) || swECYoonRomaji(s) ||  swECYoonRomaji4L(s)//(2-3) / (3) / 4
   def swECYoonEV(s: String): Boolean = s.length >= 3 && swECYoon(s) && swEVYoon(s.tail) //(4) / 3 //it was set to length>=4 before
-
-  def swEC(s: String): Boolean = (s.length >= 2 && Kana.isConsonantExtension(s.head) && sWC(s.tail)) || (s.length >= 2 && s.head == s(1))  //(2) / (2)
+  def swECRomaji(s: String): Boolean = (s.length >= 2 && s.head == s(1))  //(3)
+  def swECRomaji4L(s: String): Boolean = (s.length >= 4 && s.head == s(1) && sWRC3L(s.tail))  //(4)
+  def swKanaEC(s: String): Boolean = (s.length >= 2 && Kana.isConsonantExtension(s.head) && sWC(s.tail)) //(2)
+  def swEC(s: String): Boolean = swECRomaji(s) || swKanaEC(s)  //(3) / (2)
   def swEIC(s: String): Boolean = swEC(s) && sWIC(s.tail) //(2) / (2)?
-  def swEV(s: String): Boolean = (s.length >= 2 && Kana.isKanaConsonant(s.head) && Kana.isVowelExtension(s(1))) || (s.length >= 2 && Kana.isKanaConsonant(s.head) && Kana.isRomajiExtendedVowel(s(1))) //(2)
+  def swEV(s: String): Boolean = (s.length >= 2 && Kana.isKanaConsonant(s.head) && Kana.isVowelExtension(s(1))) || (s.length >= 2 && s.head.isLatin && !Kana.isRomajiVowel(s.head) && Kana.isRomajiExtendedVowel(s(1))) //(2)
   def swECEV(s: String): Boolean = s.length >= 3 && swEC(s) && sWC(s.tail) && swEV(s.tail) // (3) / (3) ?
+  def swRomajiN(s: String): Boolean = s.headOption.isDefined && s.head == 'n' // (1)
+  def swRomajiVowel(s: String): Boolean = s.headOption.isDefined && Kana.isRomajiVowel(s.head) // (1)
 
   def nextSyllable(s: String): Syllable = {
-    if (swECYoonEV(s)) YoonECEV(s.take(4))
-    else if (swECEV(s)) ExtendedConsonantNVowel(s.take(3))
-    else if (swECYoon(s)) YoonEC(s.take(3))
-    else if (swEVYoon(s)) YoonEV(s.take(3))
-    else if (swEV(s)) ExtendedVowel(s.take(2))
-    else if (swEIC(s)) ExtendedConsonant(s.take(2)) //make a new class for starts with iC?
-    else if (swYoon(s)) Yoon(s.take(2))
-    else if (sWSmallY(s)) SimpleSilable(s.take(1)) //should these 3 even be taken into consideration?
-    else if (sWIC(s)) SimpleSilable(s.take(1))
-    else if (sWC(s)) SimpleSilable(s.take(1))
-    else NotSyllable(s.take(1))
+
+      if (swECYoonEV(s)) YoonECEV(s.take(4))
+      else if (swECYoonRomaji4L(s)) YoonECRomaji4L(s.take(4))
+      else if (swECRomaji4L(s)) ExtendedConsonantRomaji4L(s.take(4))
+      else if (swECEV(s)) ExtendedConsonantNVowel(s.take(3))
+      else if (swEVYoon(s)) YoonEV(s.take(3))
+      else if (swECRomaji(s)) ExtendedConsonantRomaji(s.take(3))
+      else if (sWRC3L(s)) RomajiConsonant3L(s.take(3))
+      else if (swECYoon(s)) YoonEC(s.take(3)) //maybe make a distinction between 2 and 3 con yoon
+      else if (sw2LRomajiEVYoon(s)) YoonEV2L(s.take(2))
+      else if (swEV(s)) ExtendedVowel(s.take(2))
+      else if (swEIC(s)) ExtendedConsonant(s.take(2))
+      else if (swEC(s)) ExtendedConsonant(s.take(2))
+      else if (sw3LRomajiYoon(s)) Yoon3L(s.take(3)) //why is this down here?
+      else if (swYoon(s)) Yoon(s.take(2))
+      else if (sWSmallY(s)) SimpleSilable(s.take(1))
+      else if (sWIC(s)) PalatalizeableConsonant(s.take(2))
+      else if (sWRC(s)) RomajiConsonant(s.take(2))
+      else if (sWKC(s)) KanaConsonant(s.take(1))
+      else if (swRomajiVowel(s)) RomajiVowel(s.take(1))
+      else if (swRomajiN(s)) RomajiN(s.take(1))
+      else NotSyllable(s.take(1))
+
   }
 
 }
 final case class NotSyllable(override val text:String) extends Syllable(text) //@$#!
 final case class SimpleSilable(override val text:String) extends Syllable(text) //と
 final case class ExtendedConsonant(override val text:String) extends Syllable(text) //った
+final case class ExtendedConsonantRomaji(override val text:String) extends Syllable(text) //tta
+final case class ExtendedConsonantRomaji4L(override val text:String) extends Syllable(text) //sshi, ttsu, cchi
+final case class PalatalizeableConsonant(override val text:String) extends Syllable(text) //ki -> kya, ni -> nyu
 final case class ExtendedVowel(override val text:String) extends Syllable(text) //とう
 final case class ExtendedConsonantNVowel(override val text:String) extends Syllable(text) //っとう
 final case class Yoon(override val text:String) extends Syllable(text) //palatelized: きゃ
+final case class Yoon3L(override val text:String) extends Syllable(text) //sha
 final case class YoonEV(override val text:String) extends Syllable(text) //きゅう
+final case class YoonEV2L(override val text:String) extends Syllable(text) //j
 final case class YoonEC(override val text:String) extends Syllable(text) //っきゅ
+final case class YoonECRomaji4L(override val text:String) extends Syllable(text) //ssha
 final case class YoonECEV(override val text:String) extends Syllable(text) //っきゅう
+final case class RomajiN(override val text:String) extends Syllable(text) //n
+final case class RomajiVowel(override val text:String) extends Syllable(text) //o
+final case class RomajiConsonant(override val text:String) extends Syllable(text) //ha, ru, re
+final case class RomajiConsonant3L(override val text:String) extends Syllable(text) //shi, tsu, chi
+final case class KanaConsonant(override val text:String) extends Syllable(text) //ha, ru, re
