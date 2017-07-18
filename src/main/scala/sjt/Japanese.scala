@@ -125,7 +125,7 @@ object JapaneseInstances{
     def toHiragana(value: Token): Token = ??? //value.getPronunciation.flatMap(japaneseChar.toHiragana) ???
   }
 }
-object Japanese{
+object Japanese {
   def isHiragana[A](input: A)(implicit p: Japanese[A]): Boolean = p.isHiragana(input)
   def isHalfWidthKatakana[A](input: A)(implicit p: Japanese[A]):Boolean = p.isHalfWidthKatakana(input)
   def isFullWidthKatakana[A](input: A)(implicit p: Japanese[A]):Boolean = p.isFullWidthKatakana(input)
@@ -142,7 +142,7 @@ object Japanese{
   def toKatakana[A](input:A)(implicit p: Japanese[A]): A = p.toKatakana(input)
   def toHiragana[A](input:A)(implicit p: Japanese[A]): A = p.toHiragana(input)
 }
-object JapaneseSyntax{
+object JapaneseSyntax {
   implicit class JapaneseOps[A](value: A) {
     def isHiragana(implicit p: Japanese[A]): Boolean = p.isHiragana(value)
     def isHalfWidthKatakana(implicit p: Japanese[A]):Boolean = p.isHalfWidthKatakana(value)

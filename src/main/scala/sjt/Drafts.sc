@@ -44,6 +44,9 @@ import sjt.JapaneseInstances._
 //def isKatakanaMiniVowel(value: Char): Boolean = value == 'ェ' || value == 'ョ'
 def printDebug(s: String): Unit = {
   println("---------------------------")
+  println(s"$s to romaji[New]: " + Kana.kanaToRomaji((s)))
+  println(s"$s to Hiragana: " + Kana.romajiToHiragana((s)))
+  println(s"$s syllables: " + Kana.splitIntoSyllables(s))
   println(s"$s starts with consonant: " + Syllable.sWC(s))
   println(s"$s starts with i-consonant: " + Syllable.sWIC(s))
   println(s"$s starts With small Y: " + Syllable.sWSmallY(s))
@@ -55,8 +58,6 @@ def printDebug(s: String): Unit = {
   println(s"$s starts With extended i-consonant: " + Syllable.swEIC(s))
   println(s"$s starts With extended vowel: " + Syllable.swEV(s))
   println(s"$s starts With extended consonant + vowel: " + Syllable.swECEV(s))
-  println(s"$s to romaji[New]: " + Kana.kanaToRomaji((s)))
-  println(s"$s to Hiragana: " + Kana.romajiToHiragana((s)))
 
   println("---------------------------")
 
@@ -69,7 +70,7 @@ val example2 = "とう"
 val example3 = "ぎゅ"
 val example4 = "ぎゅう"
 val example5 = "った"
-val example6 = "っぎゅう"
+val example6 = "っぎゅう" //error
 val example7 = "っとう"
 val example8 = "とうきょう"
 val example9 = "とうきょうきょうと"
@@ -87,14 +88,45 @@ val example19 = "tō"
 val example20= "gyu"
 val example21 = "gyū"
 val example22 = "tta"
-val example23 = "ggyū"
+val example23 = "ggyū" //error?
 val example24 = "ttō"
 val example25 = "tōkyō"
 val example26 = "tōkyōkyōto"
 val example27 = "tō#kyō"
 val example28 = "tō#$kyō"
-val example29 = "osaka" //does it assume its not valid romaji? make a valid romaji function
+val example29 = "osaka"
 val example30 = "arasuka"
+val example31 = "a"
+val example32 = "o"
+val example33 = "おさか"
+val example34 = "アラスカ"
+val example35 ="さ"
+val example36 ="ji"
+val example37 ="じ"
+val example38 ="shasshin"
+val example39 ="しゃっしん"
+val example40 ="っしゃべる"
+val example41 ="sshabemasu"
+val example42 ="jjinkusu"
+val example43 ="っじんくす"
+val example44 ="ジャク"
+val example45 ="jaku"
+val example46 ="リーグ・オブ・レジェンド"
+val example47 ="じょじょ"
+val example48 ="jojo"
+val example49 ="jōjō"
+val example50 ="じょうじょう"
+
+
+Syllable.swYoon("ジャク")
+Syllable.sWIC("ジャク")
+Syllable.sWSmallY("ャク")
+
+Kana.allKanaAndAllKanaExtendedVowelsAndConsonantsM
+Kana.allKanaAndExtendedVowelsM
+Kana.allKanaM //tiene jya
+Kana.kanaM //no tiene jya
+Kana.yoonKatakanaM //tiene jya
 
 printDebug(example1)
 printDebug(example2)
@@ -126,6 +158,26 @@ printDebug(example27)
 printDebug(example28)
 printDebug(example29)
 printDebug(example30)
+printDebug(example31)
+printDebug(example32)
+printDebug(example33)
+printDebug(example34)
+printDebug(example35)
+printDebug(example36)
+printDebug(example37)
+printDebug(example38)
+printDebug(example39)
+printDebug(example40)
+printDebug(example41)
+printDebug(example42)
+printDebug(example43)
+printDebug(example44)
+printDebug(example45)
+printDebug(example46)
+printDebug(example47)
+printDebug(example48)
+printDebug(example49)
+printDebug(example50)
 
 //---TODO: Make every function in Syllable work for Romaji
 //---TODO: Move every function in Kana into the appropriate Japanese type class
