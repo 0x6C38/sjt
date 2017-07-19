@@ -13,7 +13,8 @@ object Kana{
 
   // Standard kana
   //-- Symbols
-  val translateableSymbols:Map[Char, Char] = Map('、' -> ',','。' -> '.','・' -> ' ')
+  val translateableSymbols:Map[Char, Char] = Map('、' -> ',','。' -> '.','・' -> ' ', '！'-> '!', '？'->'?')
+  def isTranslateableSymbol(c:Char):Boolean = translateableSymbols.keySet.contains(c)
   //-- Vowels
   val katakanaVowelM:Map[Char, Char] = Map('ア'-> 'a','エ'-> 'e','イ'-> 'i','オ'-> 'o' ,'ウ'-> 'u') //,'n' -> 'ン', ',' -> '、'
   val katakanaSmallVowelM:Map[Char, Char] = Map('ァ'-> 'a','ェ'-> 'e','ィ'-> 'i','ォ'-> 'o' ,'ゥ'-> 'u')
@@ -303,6 +304,7 @@ object Syllable{
   def swECEV(s: String): Boolean = s.length >= 3 && swEC(s) && sWC(s.tail) && swEV(s.tail) // (3) / (3) ?
   def swRomajiN(s: String): Boolean = s.headOption.isDefined && s.head == 'n' // (1)
   def swRomajiVowel(s: String): Boolean = s.headOption.isDefined && Kana.isRomajiVowel(s.head) // (1)
+  def swSymbol(s:String):Boolean = s.headOption.isDefined && Kana.isTranslateableSymbol(s.head)
 
   def nextSyllable(s: String): Syllable = {
       if (swECYoonEV(s)) YoonECEV(s.take(4))
@@ -325,6 +327,7 @@ object Syllable{
       else if (sWKC(s)) KanaConsonant(s.take(1))
       else if (swRomajiVowel(s)) RomajiVowel(s.take(1))
       else if (swRomajiN(s)) RomajiN(s.take(1))
+      else if (swSymbol(s)) Symbol(s.take(1))
       else NotSyllable(s.take(1))
   }
 
@@ -359,3 +362,4 @@ final case class RomajiVowel(override val text:String) extends Syllable(text) //
 final case class RomajiConsonant(override val text:String) extends Syllable(text) //ha, ru, re
 final case class RomajiConsonant3L(override val text:String) extends Syllable(text) //shi, tsu, chi
 final case class KanaConsonant(override val text:String) extends Syllable(text) //ha, ru, re
+final case class Symbol(override val text:String) extends Syllable(text) //。、

@@ -199,7 +199,6 @@ printDebug(example59)
 printDebug(example60)
 
 //---TODO: Correct issues with ッ at the end of a token --接続助詞 connective particles
-//---TODO: Option to pass a Tokenizer for better performance
 //---TODO: Add non-calculated fields in Kana
 //---TODO: Write tests
 //---TODO: Publish

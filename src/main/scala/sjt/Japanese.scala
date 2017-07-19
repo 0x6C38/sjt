@@ -22,9 +22,9 @@ trait Japanese[A] {
   def containsKanji(value: A): Boolean
   def containsJapanese(value: A): Boolean = containsHiragana(value) || containsKatakana(value)
   def isLatin(value: A): Boolean
-  def toRomaji(value: A): String
-  def toKatakana(value: A): String
-  def toHiragana(value: A): String
+  def toRomaji(value: A, tokenizer:Option[Tokenizer] = None): String
+  def toKatakana(value: A, tokenizer:Option[Tokenizer] = None): String
+  def toHiragana(value: A, tokenizer:Option[Tokenizer] = None): String
   def splitIntoSyllables(value:A, l: List[Syllable] = Nil): List[Syllable]
 }
 object JapaneseInstances{
@@ -42,9 +42,9 @@ object JapaneseInstances{
 
     override def isLatin(value: Syllable): Boolean = value.text.matches("[a-zA-Z].*")
 
-    override def toRomaji(value: Syllable): String = Syllable.kanaSilableToRomaji(value.text)
-    override def toKatakana(value: Syllable): String = Syllable.hiraganaOrRomajiToKatakana(value.text)
-    override def toHiragana(value: Syllable): String = Syllable.katakanaOrRomajiToHiragana(value.text)
+    override def toRomaji(value: Syllable, tokenizer:Option[Tokenizer] = None): String = Syllable.kanaSilableToRomaji(value.text)
+    override def toKatakana(value: Syllable, tokenizer:Option[Tokenizer] = None): String = Syllable.hiraganaOrRomajiToKatakana(value.text)
+    override def toHiragana(value: Syllable, tokenizer:Option[Tokenizer] = None): String = Syllable.katakanaOrRomajiToHiragana(value.text)
 
     override def splitIntoSyllables(value: Syllable, l: List[Syllable]): List[Syllable] = List(value)
 
@@ -69,9 +69,9 @@ object JapaneseInstances{
     def extendChar(value:Char):Char = Map('a' -> 'ā', 'e' -> 'ē', 'i' -> 'ī', 'o'-> 'ō', 'u' -> 'ū').get(value).getOrElse(value)
     def isExtension(value:Char):Boolean = Map('ゃ' -> 'a', 'ゅ'->'u', 'ょ'->'o', 'ャ' -> 'a', 'ュ' -> 'u', 'ョ' -> 'o').get(value).isDefined
 
-    override def toRomaji(value: Char): String = japaneseSyllable.toRomaji(splitIntoSyllables(value).head)
-    override def toKatakana(value: Char): String = japaneseSyllable.toKatakana(splitIntoSyllables(value).head)
-    override def toHiragana(value: Char): String = japaneseSyllable.toHiragana(splitIntoSyllables(value).head)
+    override def toRomaji(value: Char, tokenizer:Option[Tokenizer] = None): String = japaneseSyllable.toRomaji(splitIntoSyllables(value).head)
+    override def toKatakana(value: Char, tokenizer:Option[Tokenizer] = None): String = japaneseSyllable.toKatakana(splitIntoSyllables(value).head)
+    override def toHiragana(value: Char, tokenizer:Option[Tokenizer] = None): String = japaneseSyllable.toHiragana(splitIntoSyllables(value).head)
 
     override def splitIntoSyllables(value: Char, l: List[Syllable] = Nil): List[Syllable] = List(Syllable.nextSyllable(value.toString))
 
@@ -102,13 +102,14 @@ object JapaneseInstances{
     }
     def extendString(current:Char):Char = Map('ゃ' -> 'a', 'ゅ'->'u', 'ょ'->'o', 'ャ' -> 'a', 'ュ' -> 'u', 'ョ' -> 'o').get(current).getOrElse(current)
 
+    private def unpackStr(t:Token):String = if (t.getPronunciation != "*") t.getPronunciation else t.getSurface
 
-    def toRomaji(value: String): String  = if (!containsKanji(value)) splitIntoSyllables(value).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toRomaji(s))
-                                            else new Tokenizer().tokenize(value).asScala.foldLeft(""){(r,t:Token) => r + splitIntoSyllables(if (t.getPronunciation != "*") t.getPronunciation else t.getSurface).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toRomaji(s))  + " "}.trim
-    def toHiragana(value: String): String  = if (!containsKanji(value)) splitIntoSyllables(value).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toHiragana(s))
-                                              else new Tokenizer().tokenize(value).asScala.foldLeft(""){(r,t:Token) => r + splitIntoSyllables(if (t.getPronunciation != "*") t.getPronunciation else t.getSurface).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toHiragana(s))  + " "}.trim
-    def toKatakana(value: String): String  = if (!containsKanji(value)) splitIntoSyllables(value).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toKatakana(s))
-                                              else new Tokenizer().tokenize(value).asScala.foldLeft(""){(r,t:Token) => r + splitIntoSyllables(if (t.getPronunciation != "*") t.getPronunciation else t.getSurface).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toKatakana(s))  + " "}.trim
+    def toRomaji(value: String, tokenizer:Option[Tokenizer] = Some(new Tokenizer())): String  = if (!containsKanji(value)) splitIntoSyllables(value).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toRomaji(s))
+                                            else tokenizer.get.tokenize(value).asScala.foldLeft(""){(r,t:Token) => r + splitIntoSyllables(unpackStr(t)).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toRomaji(s))  + " "}.trim
+    def toHiragana(value: String, tokenizer:Option[Tokenizer] = Some(new Tokenizer())): String  = if (!containsKanji(value)) splitIntoSyllables(value).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toHiragana(s))
+                                              else tokenizer.get.tokenize(value).asScala.foldLeft(""){(r,t:Token) => r + splitIntoSyllables(unpackStr(t)).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toHiragana(s))  + " "}.trim
+    def toKatakana(value: String, tokenizer:Option[Tokenizer] = Some(new Tokenizer())): String  = if (!containsKanji(value)) splitIntoSyllables(value).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toKatakana(s))
+                                              else tokenizer.get.tokenize(value).asScala.foldLeft(""){(r,t:Token) => r + splitIntoSyllables(unpackStr(t)).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toKatakana(s))  + " "}.trim
 
     @tailrec
     override def splitIntoSyllables(input: String, l: List[Syllable] = Nil): List[Syllable] = {
@@ -127,9 +128,9 @@ object JapaneseInstances{
     def containsKatakana(value: Token): Boolean = japaneseString.containsKatakana(value.getSurface)
     def containsKanji(value: Token): Boolean = japaneseString.containsKanji(value.getSurface)
     def isLatin(value: Token): Boolean = japaneseString.isLatin(value.getSurface)
-    def toRomaji(value: Token): String = splitIntoSyllables(value).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toRomaji(s))
-    def toKatakana(value: Token): String = splitIntoSyllables(value).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toKatakana(s))
-    def toHiragana(value: Token): String = splitIntoSyllables(value).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toHiragana(s))
+    def toRomaji(value: Token, tokenizer:Option[Tokenizer] = None): String = splitIntoSyllables(value).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toRomaji(s))
+    def toKatakana(value: Token, tokenizer:Option[Tokenizer] = None): String = splitIntoSyllables(value).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toKatakana(s))
+    def toHiragana(value: Token, tokenizer:Option[Tokenizer] = None): String = splitIntoSyllables(value).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toHiragana(s))
     override def splitIntoSyllables(value: Token, l: List[Syllable]): List[Syllable] = japaneseString.splitIntoSyllables(if (value.getPronunciation != "*") value.getPronunciation else value.getSurface)
   }
 }
@@ -166,9 +167,10 @@ object JapaneseSyntax {
     def containsKanji(implicit p: Japanese[A]): Boolean =  p.containsKanji(value)
     def containsJapanese(implicit p: Japanese[A]): Boolean  = p.containsJapanese(value)
     def isLatin(implicit p: Japanese[A]): Boolean = p.isLatin(value)
-    def toRomaji(implicit p: Japanese[A]): String = p.toRomaji(value)
-    def toKatakana(implicit p: Japanese[A]): String = p.toKatakana(value)
-    def toHiragana(implicit p: Japanese[A]): String = p.toHiragana(value)
+    //Weird but necessary use of null. Have to check if its defined either way let each instance use its default so it reduces boilerplate
+    def toRomaji(t:Tokenizer = null)(implicit p: Japanese[A]): String = if (t != null) p.toRomaji(value, Some(t)) else p.toRomaji(value)
+    def toKatakana(t:Tokenizer = null)(implicit p: Japanese[A]): String = if (t != null) p.toKatakana(value, Some(t)) else p.toKatakana(value)
+    def toHiragana(t:Tokenizer = null)(implicit p: Japanese[A]): String = if (t != null) p.toHiragana(value, Some(t)) else p.toHiragana(value)
     def splitIntoSyllables(implicit p: Japanese[A]):List[Syllable] = p.splitIntoSyllables(value)
   }
 }
@@ -178,64 +180,75 @@ object Main {
     import JapaneseSyntax._
 
     println("--Chars: Hiragana--")
-    println("Hiragana [Char] す to romaji = " + 'す'.toRomaji)
-    println("Hiragana [Char] す to katakana = " + 'す'.toKatakana)
+    println("Hiragana [Char] す to romaji = " + 'す'.toRomaji())
+    println("Hiragana [Char] す to katakana = " + 'す'.toKatakana())
     println("--Chars: Katakana--")
-    println("Katakana [Char] ス to romaji = " + 'ス'.toRomaji)
-    println("Katakana [Char] ス to Hiragana = " + 'ス'.toHiragana)
+    println("Katakana [Char] ス to romaji = " + 'ス'.toRomaji())
+    println("Katakana [Char] ス to Hiragana = " + 'ス'.toHiragana())
     println("--Chars: Special--")
-    println("Katakana [Char] ッ to romaji = " + 'ッ'.toRomaji)
-    println("Katakana [Char] ー to romaji = " + 'ー'.toHiragana)
-    println("Katakana [Char] ッ to hiragana = " + 'ッ'.toHiragana)
-    println("Katakana [Char] ー to hiragana = " + 'ー'.toHiragana)
+    println("Katakana [Char] ッ to romaji = " + 'ッ'.toRomaji())
+    println("Katakana [Char] ー to romaji = " + 'ー'.toHiragana())
+    println("Katakana [Char] ッ to hiragana = " + 'ッ'.toHiragana())
+    println("Katakana [Char] ー to hiragana = " + 'ー'.toHiragana())
     println("--Chars: Romaji--")
-    println("Romaji   [Char] n to Hiragana = " + 'n'.toHiragana)
-    println("Romaji   [Char] o to Katakana = " + 'o'.toKatakana)
-    println("Romaji   [Char] j to Katakana = " + 'j'.toKatakana)
+    println("Romaji   [Char] n to Hiragana = " + 'n'.toHiragana())
+    println("Romaji   [Char] o to Katakana = " + 'o'.toKatakana())
+    println("Romaji   [Char] j to Katakana = " + 'j'.toKatakana())
 
     println("--Strings: Kanji Sentences--")
-    println("Kanji    [String] to romaji = " + "私は可愛いです".toRomaji)
-    println("Kanji    [String] to romaji = " + "お寿司が食べたいです".toRomaji)
+    println("Kanji    [String] to romaji = " + "私は可愛いです".toRomaji())
+    println("Kanji    [String] to romaji = " + "お寿司が食べたいです".toRomaji())
     println("--Strings: Hiragana Sentences--")
-    println("Hiragana [String] to romaji = " + "おすしがたべたいです".toRomaji)
-    println("Hiragana [String] to romaji = " + "わたしはかわいいです".toRomaji)
+    println("Hiragana [String] to romaji = " + "おすしがたべたいです".toRomaji())
+    println("Hiragana [String] to romaji = " + "わたしはかわいいです".toRomaji())
     println("--Strings: Katakana Sentences--")
-    println("Katakana [String] to romaji = " + "オスシガタベタイデス".toRomaji)
-    println("Katakana [String] to romaji = " + "ワタシハカワイイデス".toRomaji)
+    println("Katakana [String] to romaji = " + "オスシガタベタイデス".toRomaji())
+    println("Katakana [String] to romaji = " + "ワタシハカワイイデス".toRomaji())
     println("--Strings: Single Katakana Words--")
-    println("Katakana [String] to romaji = " + "ニュース".toRomaji)
+    println("Katakana [String] to romaji = " + "ニュース".toRomaji())
     println("--Strings: Single Hiragana Words--")
-    println("Hiragana [String] to romaji = " + "ぎゅうにゅう".toRomaji)
+    println("Hiragana [String] to romaji = " + "ぎゅうにゅう".toRomaji())
     println("--Strings: Single Words Kanji--")
-    println("Kanji    [String] to romaji = " + "可愛い".toRomaji)
-    println("Kanji    [String] to romaji = " + "私".toRomaji)
-    println("Kanji    [String] to romaji = " + "大きな".toRomaji)
+    println("Kanji    [String] to romaji = " + "可愛い".toRomaji())
+    println("Kanji    [String] to romaji = " + "私".toRomaji())
+    println("Kanji    [String] to romaji = " + "大きな".toRomaji())
     println("--Strings: Single Words Kanji Diphthong--")
-    println("Kanji    [String] to romaji = " + "東京".toRomaji)
-    println("Kanji    [String] to romaji = " + "牛乳".toRomaji)
-    println("Kanji    [String] to romaji = " + "喋ります".toRomaji)
-    println("Katakana [String] to romaji = " + "ジャク".toRomaji)
-    println("Katakana [String] to romaji = " + "ニャンコ".toRomaji)
+    println("Kanji    [String] to romaji = " + "東京".toRomaji())
+    println("Kanji    [String] to romaji = " + "牛乳".toRomaji())
+    println("Kanji    [String] to romaji = " + "喋ります".toRomaji())
+    println("Katakana [String] to romaji = " + "ジャク".toRomaji())
+    println("Katakana [String] to romaji = " + "ニャンコ".toRomaji())
     println("--Strings: Single Words Hiragana--")
-    println("Kanji    [String] to romaji = " + "こと".toRomaji)
+    println("Kanji    [String] to romaji = " + "こと".toRomaji())
     println("--Strings: Single Words Hiragana--")
-    println("Katakana [String] to romaji = " + "コーヒー".toRomaji)
-    println("Katakana [String] to romaji = " + "リグオブレジェンド".toRomaji)
+    println("Katakana [String] to romaji = " + "コーヒー".toRomaji())
+    println("Katakana [String] to romaji = " + "リグオブレジェンド".toRomaji())
     println("--Strings: Special--")
-    println("Katakana [String] to romaji = " + "リーグ・オブ・レジェンド".toRomaji)
-    println("Katakana [String] to romaji = " + "リーグ@オブ@レジェンド".toRomaji)
+    println("Katakana [String] to romaji = " + "リーグ・オブ・レジェンド".toRomaji())
+    println("Katakana [String] to romaji = " + "リーグ@オブ@レジェンド".toRomaji())
 
-    //println("Kanji    [String] to hiragana = " + "大きな".toHiragana)
-    //println("Kanji    [String] to katakana = " + "大きな".toKatakana)
+    val cachedTokenizer = new Tokenizer()
 
+    println("Kanji    [String] to romaji = " + "皆さんは日本の四つの大きな島の名前を知っていますか。日本には東京のような、世界によく知られている都市がたくさんありますが、皆さんはどんな都市名前を聞きたことがありますか。".toRomaji()) //467 vs 495
     val t1 = System.currentTimeMillis()
-    println("Kanji    [String] to romaji = " + "皆さんは日本の四つの大きな島の名前を知っていますか。日本には東京のような、世界によく知られている都市がたくさんありますが、皆さんはどんな都市名前を聞きたことがありますか。".toRomaji) //467 vs 495
+    println("毎日私は午前十時に起きます。十時から十二まで勉強します。午後一時に昼ごはんを食べます。あとでまた勉強をします。六時に地下鉄で大学へ行きます。十一時に私の家へ帰ります。そして晩ご飯を食べます。次に少し仕事をします。プログラミンをします。難しいです。それでも、私は大好きです。なぜならとても楽しいですから。朝の五時にねます。".toRomaji())
+    println("診察行ってきました。最終目標は心臓移植というのは変わらないそうで、自分の心臓じゃ生きられないみたいです。お金もかかるし、手術するのも入院するのももう嫌だな～…なんてことを考えながらvitaで朧村正をプレイしてました！　牛鬼と馬鬼ってボスより強くない！？　ぜんぜん勝てないんだけど…".toRomaji())
+    println("「いま」起きていることを見つけよう。国内のニュースから身近なできごとまで、みんなの話題がわかる「いま」起きていることを見つけよう。国内のニュースから身近なできごとまで、みんなの話題がわかる".toRomaji())
+    println("皆さんは日本の四つの大きな島の名前を知っていますか。日本には東京のような、世界によく知られている都市がたくさんありますが、皆さんはどんな都市名前を聞きたことがありますか。".toRomaji())
     val t2 = System.currentTimeMillis()
     val deltaT = t2-t1
     println(s"Δt = $deltaT")
 
-    println("毎日私は午前十時に起きます。十時から十二まで勉強します。午後一時に昼ごはんを食べます。あとでまた勉強をします。六時に地下鉄で大学へ行きます。十一時に私の家へ帰ります。そして晩ご飯を食べます。次に少し仕事をします。プログラミンをします。難しいです。それでも、私は大好きです。なぜならとても楽しいですから。朝の五時にねます。".toRomaji)
-    println("「いま」起きていることを見つけよう。国内のニュースから身近なできごとまで、みんなの話題がわかる".toRomaji)
+
+    val t3 = System.currentTimeMillis()
+    println("毎日私は午前十時に起きます。十時から十二まで勉強します。午後一時に昼ごはんを食べます。あとでまた勉強をします。六時に地下鉄で大学へ行きます。十一時に私の家へ帰ります。そして晩ご飯を食べます。次に少し仕事をします。プログラミンをします。難しいです。それでも、私は大好きです。なぜならとても楽しいですから。朝の五時にねます。".toRomaji(cachedTokenizer))
+    println("診察行ってきました。最終目標は心臓移植というのは変わらないそうで、自分の心臓じゃ生きられないみたいです。お金もかかるし、手術するのも入院するのももう嫌だな～…なんてことを考えながらvitaで朧村正をプレイしてました！　牛鬼と馬鬼ってボスより強くない！？　ぜんぜん勝てないんだけど…".toRomaji(cachedTokenizer))
+    println("「いま」起きていることを見つけよう。国内のニュースから身近なできごとまで、みんなの話題がわかる「いま」起きていることを見つけよう。国内のニュースから身近なできごとまで、みんなの話題がわかる".toRomaji(cachedTokenizer))
+    println("皆さんは日本の四つの大きな島の名前を知っていますか。日本には東京のような、世界によく知られている都市がたくさんありますが、皆さんはどんな都市名前を聞きたことがありますか。".toRomaji(cachedTokenizer))
+
+    val t4 = System.currentTimeMillis()
+    val deltaT2 = t4-t3
+    println(s"Δt = $deltaT2 ~ 479 chars. 100k chars ~ 3.5 seconds")
 
     println("-----------------")
     printAllFeatures("リーグ@オブ@レジェンド")
@@ -243,8 +256,11 @@ object Main {
     printAllFeatures("見つけよう")
     println("-----------------")
     printAllFeatures("皆さんは日本の四つの大きな島の名前を知っていますか")
+    //println("-----------------")
+    //printAllFeatures("診察行ってきました。最終目標は心臓移植というのは変わらないそうで、自分の心臓じゃ生きられないみたいです。お金もかかるし、手術するのも入院するのももう嫌だな～…なんてことを考えながらvitaで朧村正をプレイしてました！　牛鬼と馬鬼ってボスより強くない！？　ぜんぜん勝てないんだけど…")
 
   }
+
   def printAllFeatures(s:String):Unit = new Tokenizer().tokenize(s).asScala.toArray.foreach(t => println(t.getSurface() + ": " + t.getAllFeatures + " | Pronunciation: " + t.getPronunciation))
 
   def strToRomaji(s: String):Unit = {
