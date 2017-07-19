@@ -41,12 +41,12 @@ import sjt.JapaneseInstances._
 
 
 
-//def isKatakanaMiniVowel(value: Char): Boolean = value == 'ェ' || value == 'ョ'
 def printDebug(s: String): Unit = {
-  println("---------------------------")
-  println(s"$s to romaji[New]: " + Kana.kanaToRomaji((s)))
-  println(s"$s to Hiragana: " + Kana.romajiToHiragana((s)))
-  println(s"$s syllables: " + Kana.splitIntoSyllables(s))
+  //println("---------------------------")
+  println(s"$s Original: $s, romaji: " + s.toRomaji + " hiragana: " + s.toHiragana + ", katakana: " +s.toKatakana+ ", syllables: " + s.splitIntoSyllables)
+  println(s"$s to romaji[New]: " + s.toRomaji)
+  println(s"$s to Hiragana: " + s.toHiragana)
+  println(s"$s syllables: " + s.splitIntoSyllables)
   println(s"$s starts with consonant: " + Syllable.sWC(s))
   println(s"$s starts with i-consonant: " + Syllable.sWIC(s))
   println(s"$s starts With small Y: " + Syllable.sWSmallY(s))
@@ -58,8 +58,8 @@ def printDebug(s: String): Unit = {
   println(s"$s starts With extended i-consonant: " + Syllable.swEIC(s))
   println(s"$s starts With extended vowel: " + Syllable.swEV(s))
   println(s"$s starts With extended consonant + vowel: " + Syllable.swECEV(s))
-
-  println("---------------------------")
+  println
+  //println("---------------------------")
 
 }
 
@@ -116,6 +116,9 @@ val example47 ="じょじょ"
 val example48 ="jojo"
 val example49 ="jōjō"
 val example50 ="じょうじょう"
+val example51 ="おすしがたべたいです"
+val example52 ="ぎんこ"
+val example53 ="かわいいです"
 
 
 Syllable.swYoon("ジャク")
@@ -123,10 +126,7 @@ Syllable.sWIC("ジャク")
 Syllable.sWSmallY("ャク")
 
 Kana.allKanaAndAllKanaExtendedVowelsAndConsonantsM
-Kana.allKanaAndExtendedVowelsM
-Kana.allKanaM //tiene jya
-Kana.kanaM //no tiene jya
-Kana.yoonKatakanaM //tiene jya
+
 
 printDebug(example1)
 printDebug(example2)
@@ -178,8 +178,11 @@ printDebug(example47)
 printDebug(example48)
 printDebug(example49)
 printDebug(example50)
+printDebug(example51)
+printDebug(example52)
+printDebug(example53)
 
-//---TODO: Move every function in Kana into the appropriate Japanese type class
+//---TODO: Correctly implement kanji transliteration
 //---TODO: Option to pass a Tokenizer for better performance
 //---TODO: Make the Japanese type class work with higher kinded types
 //---TODO: Add non-calculated fields in Kana

@@ -7,6 +7,7 @@ import com.atilika.kuromoji.ipadic.Token
 import com.atilika.kuromoji.ipadic.Tokenizer
 
 import collection.JavaConverters._
+import scala.annotation.tailrec
 
 trait Japanese[A] {
   def isHiragana(value: A): Boolean
@@ -24,6 +25,7 @@ trait Japanese[A] {
   def toRomaji(value: A): String
   def toKatakana(value: A): A
   def toHiragana(value: A): A
+  def splitIntoSyllables(value:A, l: List[Syllable] = Nil): List[Syllable]
 }
 object JapaneseInstances{
   implicit val japaneseChar = new Japanese[Char] {
@@ -65,8 +67,12 @@ object JapaneseInstances{
       case _ => Map('a' -> 'あ','e' -> 'え','i' -> 'い','o' -> 'お' ,'u' -> 'う','n' -> 'ん', ',' -> '、').get(value).getOrElse(value) //if translateable romaji, translate, else do nothing
     }
 
+    override def splitIntoSyllables(value: Char, l: List[Syllable] = Nil): List[Syllable] = List(Syllable.nextSyllable(value.toString))
+
     def extendChar(value:Char):Char = Map('a' -> 'ā', 'e' -> 'ē', 'i' -> 'ī', 'o'-> 'ō', 'u' -> 'ū').get(value).getOrElse(value)
     def isExtension(value:Char):Boolean = Map('ゃ' -> 'a', 'ゅ'->'u', 'ょ'->'o', 'ャ' -> 'a', 'ュ' -> 'u', 'ョ' -> 'o').get(value).isDefined
+
+
   }
   implicit val japaneseString = new Japanese[String] {
     def isHiragana(value: String): Boolean = value.toCharArray.forall(japaneseChar.isHiragana)
@@ -93,19 +99,26 @@ object JapaneseInstances{
     }
     def extendString(current:Char):Char = Map('ゃ' -> 'a', 'ゅ'->'u', 'ょ'->'o', 'ャ' -> 'a', 'ュ' -> 'u', 'ョ' -> 'o').get(current).getOrElse(current)
 
+    private def katakanaToHiragana(s:String):String = Kana.allKatakanaToHiraganaM.get(s).getOrElse(s)
+    private def romajiToHiragana(s:String):String = Kana.allRomajiToHiraganaM.get(s).getOrElse(s)
+    private def katakanaOrRomajiToHiragana(s:String):String = Kana.allKatakanaToHiraganaM.get(s).getOrElse(Kana.allRomajiToHiraganaM.get(s).getOrElse(s))
 
-    def toRomaji(value: String): String  = {
-      val tokens = new Tokenizer().tokenize(value).asScala
-      def romanize(acc: String, currentV: Token):String = {
-        if (acc.lastOption.getOrElse('∑') == 'っ') acc.init + localTokenToRomaji(currentV).head + localTokenToRomaji(currentV)
-        else if ((currentV.getAllFeaturesArray.headOption.getOrElse(".") == "助動詞" && currentV.getPronunciation != "デス") || (currentV.getAllFeaturesArray.headOption.getOrElse(".") == "助詞" && currentV.getPronunciation == "テ")) acc + localTokenToRomaji(currentV)
-        else acc + " " + localTokenToRomaji(currentV)
-      }
-      romanize(tokens.init.foldLeft("") { (acc: String, currentV: Token) => romanize(acc, currentV) } + "", tokens.last).trim
+    private def hiraganaToKatakana(s:String):String = Kana.allHiraganaToKatakanaM.get(s).getOrElse(s)
+    private def romajiToKatakana(s:String):String = Kana.allRomajiToKatakanaM.get(s).getOrElse(s)
+    def hiraganaOrRomajiToKatakana(s:String):String = Kana.allHiraganaToKatakanaM.get(s).getOrElse(Kana.allRomajiToKatakanaM.get(s).getOrElse(s))
+
+    def toRomaji(value: String): String  = splitIntoSyllables(value, List[Syllable]()).reverse.foldLeft("")((a, s) => a + Kana.kanaSilableToRomaji(s.text))
+    def toHiragana(value: String): String  = splitIntoSyllables(value, List[Syllable]()).reverse.foldLeft("")((a, s) => a + katakanaOrRomajiToHiragana(s.text))
+    def toKatakana(value: String): String  = splitIntoSyllables(value, List[Syllable]()).reverse.foldLeft("")((a, s) => a + hiraganaOrRomajiToKatakana(s.text))
+
+
+    @tailrec
+    override def splitIntoSyllables(input: String, l: List[Syllable] = Nil): List[Syllable] = {
+      val nS = Syllable.nextSyllable(input)
+      if (input.isEmpty) l
+      else splitIntoSyllables(input.drop(nS.text.length), nS :: l)
     }
 
-    def toKatakana(value: String): String =  ???
-    def toHiragana(value: String): String = ???
   }
   implicit val kuromojiToken = new Japanese[Token] {
     def isHiragana(value: Token): Boolean = japaneseString.isHiragana(value.getSurface)
@@ -123,6 +136,7 @@ object JapaneseInstances{
     }
     def toKatakana(value: Token): Token =  ??? //value.getReading.flatMap(japaneseChar.toRomaji)
     def toHiragana(value: Token): Token = ??? //value.getPronunciation.flatMap(japaneseChar.toHiragana) ???
+    override def splitIntoSyllables(value: Token, l: List[Syllable]): List[Syllable] = japaneseString.splitIntoSyllables(value.getPronunciation)
   }
 }
 object Japanese {
@@ -159,6 +173,7 @@ object JapaneseSyntax {
     def toRomaji(implicit p: Japanese[A]): String = p.toRomaji(value)
     def toKatakana(implicit p: Japanese[A]): A = p.toKatakana(value)
     def toHiragana(implicit p: Japanese[A]): A = p.toHiragana(value)
+    def splitIntoSyllables(implicit p: Japanese[A]):List[Syllable] = p.splitIntoSyllables(value)
   }
 }
 object Main {
