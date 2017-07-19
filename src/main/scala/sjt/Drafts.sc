@@ -47,6 +47,7 @@ def printDebug(s: String): Unit = {
   println(s"$s to romaji[New]: " + s.toRomaji)
   println(s"$s to Hiragana: " + s.toHiragana)
   println(s"$s syllables: " + s.splitIntoSyllables)
+  println(s"$s syllables k: " + s.toKatakana.splitIntoSyllables)
   println(s"$s starts with consonant: " + Syllable.sWC(s))
   println(s"$s starts with i-consonant: " + Syllable.sWIC(s))
   println(s"$s starts With small Y: " + Syllable.sWSmallY(s))
@@ -63,14 +64,15 @@ def printDebug(s: String): Unit = {
 
 }
 
-//import sjt.{Syllable, NotSyllable, SimpleSilable, ExtendedConsonant, ExtendedVowel, ExtendedConsonantNVowel, Yoon, YoonEV, YoonEC, YoonECEV}
+"namae wo shiッ te i masッu ka".indexOf("ッ")
+
 
 val example1 = "きょう"
 val example2 = "とう"
 val example3 = "ぎゅ"
 val example4 = "ぎゅう"
 val example5 = "った"
-val example6 = "っぎゅう" //error
+val example6 = "っぎゅう"
 val example7 = "っとう"
 val example8 = "とうきょう"
 val example9 = "とうきょうきょうと"
@@ -88,7 +90,7 @@ val example19 = "tō"
 val example20= "gyu"
 val example21 = "gyū"
 val example22 = "tta"
-val example23 = "ggyū" //error?
+val example23 = "ggyū"
 val example24 = "ttō"
 val example25 = "tōkyō"
 val example26 = "tōkyōkyōto"
@@ -119,6 +121,13 @@ val example50 ="じょうじょう"
 val example51 ="おすしがたべたいです"
 val example52 ="ぎんこ"
 val example53 ="かわいいです"
+val example54 ="聞きた"
+val example55 ="キキ"
+val example56 ="大きな"
+val example57 ="東京"
+val example58 ="って"
+val example59 ="見つけよう"//kuromoji error
+val example60 ="みつけよう"
 
 
 Syllable.swYoon("ジャク")
@@ -181,10 +190,16 @@ printDebug(example50)
 printDebug(example51)
 printDebug(example52)
 printDebug(example53)
+printDebug(example54)
+printDebug(example55)
+printDebug(example56)
+printDebug(example57)
+printDebug(example58)
+printDebug(example59)
+printDebug(example60)
 
-//---TODO: Correctly implement kanji transliteration
+//---TODO: Correct issues with ッ at the end of a token --接続助詞 connective particles
 //---TODO: Option to pass a Tokenizer for better performance
-//---TODO: Make the Japanese type class work with higher kinded types
 //---TODO: Add non-calculated fields in Kana
 //---TODO: Write tests
 //---TODO: Publish
