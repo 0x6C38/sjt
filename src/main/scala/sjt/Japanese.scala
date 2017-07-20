@@ -1,6 +1,5 @@
 package sjt
 
-import java.nio.Buffer
 import java.nio.charset.Charset
 
 import com.atilika.kuromoji.ipadic.Token
@@ -87,22 +86,6 @@ object JapaneseInstances{
     def containsKanji(value: String): Boolean = value.toCharArray.exists(japaneseChar.containsKanji)
     def isLatin(value: String): Boolean = value.toCharArray.forall(japaneseChar.isLatin)
 
-    def localTokenToRomaji(value: Token): String = {if (value.getPronunciation != "*") value.getPronunciation else  value.getSurface}.foldLeft("") { (acc: String, currentV: Char) =>
-      if (!acc.isEmpty && (acc.last == 'ッ' || acc.last == 'っ')) acc.init + japaneseChar.toRomaji(currentV).charAt(0) + japaneseChar.toRomaji(currentV)
-      else if (currentV == 'ー' || (!acc.isEmpty && japaneseChar.isLatinVowel(acc.last) && currentV == 'ー' || currentV == 'う')) {if (acc.init.lastOption.getOrElse('∑') == 'i') acc.init.init + "y" else acc.init} + japaneseChar.extendChar(japaneseChar.toRomaji(acc.last).charAt(0))
-      else if (japaneseChar.isExtension(currentV) && (!acc.isEmpty && (japaneseChar.isLatinVowel(acc.last)))){
-        if(acc.init.lastOption != 'j') {
-          acc + extendString(currentV)
-        } else { //acc.init
-          acc.init + extendString(currentV)
-        }
-      }
-      else if (japaneseChar.isVowel(currentV) && (!acc.isEmpty && !acc.init.isEmpty && acc.init.last == 'j'))acc.init + japaneseChar.toRomaji(currentV)
-      else acc + japaneseChar.toRomaji(currentV)
-    }
-    def extendString(current:Char):Char = Map('ゃ' -> 'a', 'ゅ'->'u', 'ょ'->'o', 'ャ' -> 'a', 'ュ' -> 'u', 'ョ' -> 'o').get(current).getOrElse(current)
-
-
     def toRomaji(value: String, tokenizer:Option[Tokenizer] = Some(new Tokenizer())):String = {
       if (!containsKanji(value)) splitIntoSyllables(value).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toRomaji(s))
       else splitIntoSyllables(tokensToString(tokenizer.get.tokenize(value).asScala.toList)).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toRomaji(s)).trim
@@ -116,10 +99,7 @@ object JapaneseInstances{
       else splitIntoSyllables(tokensToString(tokenizer.get.tokenize(value).asScala.toList)).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toKatakana(s)).trim
     }
 
-    private def calculatedSpacing(t: Token): String = t.getAllFeaturesArray()(1) match {
-      case "接続助詞" => ""
-      case _ => " "
-    }
+    private def calculatedSpacing(t: Token): String = t.getAllFeaturesArray()(1) match { case "接続助詞" => "" case _ => " " }
     private def tokenToString(t:Token):String = if (t.getPronunciation != "*") t.getPronunciation else t.getSurface
     private def tokensToString(ts:List[Token]) = ts.foldLeft(""){(r,t:Token) => r + calculatedSpacing(t) +  tokenToString(t)}
 
