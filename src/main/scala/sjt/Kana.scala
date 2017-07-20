@@ -277,8 +277,8 @@ object Syllable{
   //V = Vowel; EV = Extended Vowel; sW = starts With
   def sWRC3L(s: String): Boolean = s != "" &&  (s.length >= 3 && Kana.is3LRomaji(s.take(3))) //(3)
   def sWRC(s: String): Boolean = s != "" &&  (s.length >= 2 && Kana.isRomajiConsonant(s.take(2))) //(2)
-  def sWKC(s: String): Boolean = s != "" && ((s.isHiragana || s.isKatakana && s.headOption.isDefined && Kana.isKanaConsonant(s.head))) //(1)
-  def sWC(s: String): Boolean = s != "" && ((s.isHiragana || s.isKatakana && s.headOption.isDefined && Kana.isKanaConsonant(s.head)) ||  (s.length >= 2 && Kana.isRomajiConsonant(s.take(2)))) //(1) / (2)
+  def sWKC(s: String): Boolean = s != "" && (Kana.isKanaConsonant(s.head)) //(1)
+  def sWC(s: String): Boolean = (s.headOption.isDefined && Kana.isKanaConsonant(s.head)) || (s.length >= 2 && Kana.isRomajiConsonant(s.take(2))) //(1) / (2) // Error?
   def sWIC(s: String): Boolean = s.headOption.isDefined && Kana.isIConsonant(s.head) || (s.length >= 2 && Kana.isIConsonantR(s.take(2)))//(1) / (2)
   def sWSmallY(s: String): Boolean = s.headOption.isDefined && Kana.isSmallY(s.head) //(1)
   def sw2LRomajiYoon(s: String): Boolean = s.length >= 2 && Kana.isYoonRomaji(s.take(2)) || Kana.isExtendedVowelYoonRomaji(s.take(2)) //(2)
@@ -297,14 +297,15 @@ object Syllable{
   def swECYoonEV(s: String): Boolean = s.length >= 3 && swECYoon(s) && swEVYoon(s.tail) //(4) / 3 //it was set to length>=4 before
   def swECRomaji(s: String): Boolean = (s.length >= 2 && !s.head.isKana && s.head == s(1))  //(3)
   def swECRomaji4L(s: String): Boolean = (s.length >= 4 && s.head == s(1) && sWRC3L(s.tail))  //(4)
-  def swKanaEC(s: String): Boolean = (s.length >= 2 && Kana.isConsonantExtension(s.head) && sWC(s.tail)) //(2)
+  def swConsonantExtension(s: String): Boolean = s.headOption.isDefined && Kana.isConsonantExtension(s.head) //(2)
+  def swKanaEC(s: String): Boolean = (s.length >= 2 && swConsonantExtension(s) && sWKC(s.tail)) //(2)
   def swEC(s: String): Boolean = swECRomaji(s) || swKanaEC(s)  //(3) / (2)
   def swEIC(s: String): Boolean = swEC(s) && sWIC(s.tail) //(2) / (2)?
   def swEV(s: String): Boolean = (s.length >= 2 && (Kana.isKanaVowel(s.head) || Kana.isKanaConsonant(s.head)) && Kana.isVowelExtension(s(1))) || (s.length >= 2 && s.head.isLatin && !Kana.isRomajiVowel(s.head) && Kana.isRomajiExtendedVowel(s(1))) //(2) //prev:Kana.isConsonant at start
   def swECEV(s: String): Boolean = s.length >= 3 && swEC(s) && sWC(s.tail) && swEV(s.tail) // (3) / (3) ?
   def swRomajiN(s: String): Boolean = s.headOption.isDefined && s.head == 'n' // (1)
   def swRomajiVowel(s: String): Boolean = s.headOption.isDefined && Kana.isRomajiVowel(s.head) // (1)
-  def swSymbol(s:String):Boolean = s.headOption.isDefined && Kana.isTranslateableSymbol(s.head)
+  def swSymbol(s:String):Boolean = s.headOption.isDefined && Kana.isTranslateableSymbol(s.head) // (1)
 
   def nextSyllable(s: String): Syllable = {
       if (swECYoonEV(s)) YoonECEV(s.take(4))
@@ -327,6 +328,7 @@ object Syllable{
       else if (sWKC(s)) KanaConsonant(s.take(1))
       else if (swRomajiVowel(s)) RomajiVowel(s.take(1))
       else if (swRomajiN(s)) RomajiN(s.take(1))
+      else if (swConsonantExtension(s)) ConsonantExtension(s.take(1))
       else if (swSymbol(s)) Symbol(s.take(1))
       else NotSyllable(s.take(1))
   }
@@ -362,4 +364,5 @@ final case class RomajiVowel(override val text:String) extends Syllable(text) //
 final case class RomajiConsonant(override val text:String) extends Syllable(text) //ha, ru, re
 final case class RomajiConsonant3L(override val text:String) extends Syllable(text) //shi, tsu, chi
 final case class KanaConsonant(override val text:String) extends Syllable(text) //ha, ru, re
+final case class ConsonantExtension(override val text:String) extends Syllable(text) //ッ
 final case class Symbol(override val text:String) extends Syllable(text) //。、

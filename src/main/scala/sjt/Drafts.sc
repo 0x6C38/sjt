@@ -23,9 +23,9 @@ val exampleString2 = "おすしがたべたいです"
 val tokenizer = new Tokenizer()
 val tokens = tokenizer.tokenize(exampleString2).asScala.toArray
 val token: Token = tokens.head
-val romanizedTokens = tokens.map(_.toRomaji)
+val romanizedTokens = tokens.map(_.toRomaji())
 //println("し".toRomaji)
-println(token.toRomaji)
+println(token.toRomaji())
 println(romanizedTokens)
 //val ts3:String = tokens.flatMap(_.getPronunciation.map(_.toRomaji)).mkString
 val ts3: String = tokens.map(_.getPronunciation).mkString
@@ -43,11 +43,11 @@ import sjt.JapaneseInstances._
 
 def printDebug(s: String): Unit = {
   //println("---------------------------")
-  println(s"$s Original: $s, romaji: " + s.toRomaji + " hiragana: " + s.toHiragana + ", katakana: " +s.toKatakana+ ", syllables: " + s.splitIntoSyllables)
-  println(s"$s to romaji[New]: " + s.toRomaji)
-  println(s"$s to Hiragana: " + s.toHiragana)
+  println(s"$s Original: $s, romaji: " + s.toRomaji() + " hiragana: " + s.toHiragana() + ", katakana: " +s.toKatakana()+ ", syllables: " + s.splitIntoSyllables)
+  println(s"$s to romaji[New]: " + s.toRomaji())
+  println(s"$s to Hiragana: " + s.toHiragana())
   println(s"$s syllables: " + s.splitIntoSyllables)
-  println(s"$s syllables k: " + s.toKatakana.splitIntoSyllables)
+  println(s"$s syllables k: " + s.toKatakana().splitIntoSyllables)
   println(s"$s starts with consonant: " + Syllable.sWC(s))
   println(s"$s starts with i-consonant: " + Syllable.sWIC(s))
   println(s"$s starts With small Y: " + Syllable.sWSmallY(s))
@@ -128,15 +128,17 @@ val example57 ="東京"
 val example58 ="って"
 val example59 ="見つけよう"//kuromoji error
 val example60 ="みつけよう"
+val example61 ="シッテ"
+
 
 
 Syllable.swYoon("ジャク")
 Syllable.sWIC("ジャク")
 Syllable.sWSmallY("ャク")
 
-Kana.allKanaAndAllKanaExtendedVowelsAndConsonantsM
+//Kana.allKanaAndAllKanaExtendedVowelsAndConsonantsM
 
-
+/*
 printDebug(example1)
 printDebug(example2)
 printDebug(example3)
@@ -192,11 +194,25 @@ printDebug(example52)
 printDebug(example53)
 printDebug(example54)
 printDebug(example55)
+
 printDebug(example56)
 printDebug(example57)
 printDebug(example58)
 printDebug(example59)
 printDebug(example60)
+printDebug(example61)
+*/
+val example62 =" ミナサン ワ ニッポン ノ ヨッツ ノ オーキナ シマ ノ ナマエ ヲ シッテ イ マス カ 。"
+val example63 =" ッテ"
+val example64 =" ッ"
+val example65 =" シッテ "
+val example66 =" ナマエ ヲ シッテ イ マス カ 。"
+
+printDebug(example62)
+printDebug(example63)
+printDebug(example64)
+printDebug(example65)
+printDebug(example66)
 
 //---TODO: Correct issues with ッ at the end of a token --接続助詞 connective particles
 //---TODO: Add non-calculated fields in Kana
