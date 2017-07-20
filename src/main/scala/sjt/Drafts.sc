@@ -18,7 +18,7 @@ Japanese.isHiragana('c')
 'j'.isKatakana
 'カ'.isKatakana
 
-Kana.allKatakanaToHiraganaM
+Kana.allKatakanaToHiraganaM // doesn't have a single ン -> ん and has an incorrect ンー -> ん
 
 val exampleString = "お寿司が食べたい"
 val exampleString2 = "おすしがたべたいです"
