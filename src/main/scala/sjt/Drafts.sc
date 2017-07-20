@@ -18,7 +18,9 @@ Japanese.isHiragana('c')
 'j'.isKatakana
 'カ'.isKatakana
 
-val exampleString = "お寿司が食べたい。"
+Kana.allKatakanaToHiraganaM
+
+val exampleString = "お寿司が食べたい"
 val exampleString2 = "おすしがたべたいです"
 val tokenizer = new Tokenizer()
 val tokens = tokenizer.tokenize(exampleString2).asScala.toArray
@@ -63,9 +65,20 @@ def printDebug(s: String): Unit = {
   //println("---------------------------")
 
 }
+def transliterateAll(s:String, t:Tokenizer): Unit ={
+  println(s.toRomaji(t))
+  println(s.toHiragana(t))
+  println(s.toKatakana(t))
+}
+val cachedTokenizer = new Tokenizer()
+transliterateAll("聞く",cachedTokenizer)
+transliterateAll("大きな",cachedTokenizer)
+transliterateAll("東京",cachedTokenizer)
+transliterateAll("にっぽん",cachedTokenizer)
+transliterateAll("日本",cachedTokenizer)
+transliterateAll("ニッポン",cachedTokenizer)
 
-
-val example54 ="聞きた"
+val example54 ="聞く"
 val example56 ="大きな"
 val example57 ="東京"
 val example59 ="見つけよう"//kuromoji error

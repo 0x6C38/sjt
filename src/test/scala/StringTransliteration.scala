@@ -16,6 +16,7 @@ class StringTransliteration extends FlatSpec with Matchers{
     "じゃく".toHiragana() should be("ジャク")
     "しって".toHiragana() should be("シッテ")
     "ナマエ ヲ シッテ イ マス カ".toHiragana() should be("なまえ を しって い ます か")
+    "ニッポン".toHiragana() should be("にっぽん")
   }
   it should "correctly transliterate from romaji to hiragana" in {
     "kyō".toHiragana() should be("きょう")
