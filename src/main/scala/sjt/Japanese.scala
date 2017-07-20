@@ -103,17 +103,18 @@ object JapaneseInstances{
     def extendString(current:Char):Char = Map('ゃ' -> 'a', 'ゅ'->'u', 'ょ'->'o', 'ャ' -> 'a', 'ュ' -> 'u', 'ョ' -> 'o').get(current).getOrElse(current)
 
 
-
     def toRomaji(value: String, tokenizer:Option[Tokenizer] = Some(new Tokenizer())):String = {
       if (!containsKanji(value)) splitIntoSyllables(value).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toRomaji(s))
       else splitIntoSyllables(tokensToString(tokenizer.get.tokenize(value).asScala.toList)).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toRomaji(s)).trim
     }
-    //def toRomaji(value: String, tokenizer:Option[Tokenizer] = Some(new Tokenizer())): String  = if (!containsKanji(value)) splitIntoSyllables(value).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toRomaji(s))
-    //                                        else tokenizer.get.tokenize(value).asScala.foldLeft(""){(r,t:Token) => r + splitIntoSyllables(tokenToString(t)).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toRomaji(s))  + " "}.trim
-    def toHiragana(value: String, tokenizer:Option[Tokenizer] = Some(new Tokenizer())): String  = if (!containsKanji(value)) splitIntoSyllables(value).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toHiragana(s))
-                                              else tokenizer.get.tokenize(value).asScala.foldLeft(""){(r,t:Token) => r + splitIntoSyllables(tokenToString(t)).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toHiragana(s))  + " "}.trim
-    def toKatakana(value: String, tokenizer:Option[Tokenizer] = Some(new Tokenizer())): String  = if (!containsKanji(value)) splitIntoSyllables(value).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toKatakana(s))
-                                              else tokenizer.get.tokenize(value).asScala.foldLeft(""){(r,t:Token) => r + splitIntoSyllables(tokenToString(t)).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toKatakana(s))  + " "}.trim
+    def toHiragana(value: String, tokenizer:Option[Tokenizer] = Some(new Tokenizer())):String = {
+      if (!containsKanji(value)) splitIntoSyllables(value).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toHiragana(s))
+      else splitIntoSyllables(tokensToString(tokenizer.get.tokenize(value).asScala.toList)).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toHiragana(s)).trim
+    }
+    def toKatakana(value: String, tokenizer:Option[Tokenizer] = Some(new Tokenizer())):String = {
+      if (!containsKanji(value)) splitIntoSyllables(value).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toKatakana(s))
+      else splitIntoSyllables(tokensToString(tokenizer.get.tokenize(value).asScala.toList)).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toKatakana(s)).trim
+    }
 
     private def calculatedSpacing(t: Token): String = t.getAllFeaturesArray()(1) match {
       case "接続助詞" => ""
@@ -260,6 +261,9 @@ object Main {
     val t4 = System.currentTimeMillis()
     val deltaT2 = t4-t3
     println(s"Δt = $deltaT2 ~ 479 chars. 100k chars ~ 3.5 seconds")
+
+    println("皆さんは日本の四つの大きな島の名前を知っていますか。日本には東京のような、世界によく知られている都市がたくさんありますが、皆さんはどんな都市名前を聞きたことがありますか。".toKatakana(cachedTokenizer))
+    println("皆さんは日本の四つの大きな島の名前を知っていますか。日本には東京のような、世界によく知られている都市がたくさんありますが、皆さんはどんな都市名前を聞きたことがありますか。".toHiragana(cachedTokenizer))
 
     println("-----------------")
     printAllFeatures("リーグ@オブ@レジェンド")
