@@ -3,7 +3,7 @@ import sjt.JapaneseInstances._
 import sjt.JapaneseSyntax._
 
 class CharTransliteration extends FlatSpec with Matchers{
-  it should "correctly transliterate from hiragana to hiragana" in {
+  "Chars" should "correctly transliterate from hiragana to hiragana" in {
     'ろ'.toHiragana() should be("ろ")
     'さ'.toHiragana() should be("さ")
   }
@@ -31,7 +31,8 @@ class CharTransliteration extends FlatSpec with Matchers{
     'n'.toKatakana() should be("ン")
     't'.toKatakana() should be("t")
   }
-  "Chars" should "correctly transliterate from hiragana to romaji" in {
+
+  it should "correctly transliterate from hiragana to romaji" in {
     'す'.toRomaji() should be("su")
     'な'.toRomaji() should be("na")
     'ろ'.toHiragana() should be("ro")

@@ -64,155 +64,21 @@ def printDebug(s: String): Unit = {
 
 }
 
-"namae wo shiッ te i masッu ka".indexOf("ッ")
 
-
-val example1 = "きょう"
-val example2 = "とう"
-val example3 = "ぎゅ"
-val example4 = "ぎゅう"
-val example5 = "った"
-val example6 = "っぎゅう"
-val example7 = "っとう"
-val example8 = "とうきょう"
-val example9 = "とうきょうきょうと"
-val example10 = "とう#きょう"
-val example11 = "とう#$きょう"
-val example12 = "to"
-val example13 = "k"
-val example14 = ""
-val example15 = " "
-val example16 = "@"
-val example17 = "ki"
-
-val example18 = "kyō"
-val example19 = "tō"
-val example20= "gyu"
-val example21 = "gyū"
-val example22 = "tta"
-val example23 = "ggyū"
-val example24 = "ttō"
-val example25 = "tōkyō"
-val example26 = "tōkyōkyōto"
-val example27 = "tō#kyō"
-val example28 = "tō#$kyō"
-val example29 = "osaka"
-val example30 = "arasuka"
-val example31 = "a"
-val example32 = "o"
-val example33 = "おさか"
-val example34 = "アラスカ"
-val example35 ="さ"
-val example36 ="ji"
-val example37 ="じ"
-val example38 ="shasshin"
-val example39 ="しゃっしん"
-val example40 ="っしゃべる"
-val example41 ="sshabemasu"
-val example42 ="jjinkusu"
-val example43 ="っじんくす"
-val example44 ="ジャク"
-val example45 ="jaku"
-val example46 ="リーグ・オブ・レジェンド"
-val example47 ="じょじょ"
-val example48 ="jojo"
-val example49 ="jōjō"
-val example50 ="じょうじょう"
-val example51 ="おすしがたべたいです"
-val example52 ="ぎんこ"
-val example53 ="かわいいです"
 val example54 ="聞きた"
-val example55 ="キキ"
 val example56 ="大きな"
 val example57 ="東京"
-val example58 ="って"
 val example59 ="見つけよう"//kuromoji error
-val example60 ="みつけよう"
-val example61 ="シッテ"
-
-
-
-Syllable.swYoon("ジャク")
-Syllable.sWIC("ジャク")
-Syllable.sWSmallY("ャク")
 
 //Kana.allKanaAndAllKanaExtendedVowelsAndConsonantsM
 
-
-printDebug(example1)
-printDebug(example2)
-printDebug(example3)
-printDebug(example4)
-printDebug(example5)
-printDebug(example6)
-printDebug(example7)
-printDebug(example8)
-printDebug(example9)
-printDebug(example10)
-printDebug(example11)
-printDebug(example12)
-printDebug(example13)
-printDebug(example14)
-printDebug(example15)
-printDebug(example16)
-printDebug(example17)
-printDebug(example18)
-printDebug(example19)
-printDebug(example20)
-printDebug(example21)
-printDebug(example22)
-printDebug(example23)
-printDebug(example24)
-printDebug(example25)
-printDebug(example26)
-printDebug(example27)
-printDebug(example28)
-printDebug(example29)
-printDebug(example30)
-printDebug(example31)
-printDebug(example32)
-printDebug(example33)
-printDebug(example34)
-printDebug(example35)
-printDebug(example36)
-printDebug(example37)
-printDebug(example38)
-printDebug(example39)
-printDebug(example40)
-printDebug(example41)
-printDebug(example42)
-printDebug(example43)
-printDebug(example44)
-printDebug(example45)
-printDebug(example46)
-printDebug(example47)
-printDebug(example48)
-printDebug(example49)
-printDebug(example50)
-printDebug(example51)
-printDebug(example52)
-printDebug(example53)
 printDebug(example54)
-printDebug(example55)
 
 printDebug(example56)
 printDebug(example57)
-printDebug(example58)
 printDebug(example59)
-printDebug(example60)
-printDebug(example61)
 
-val example62 =" ミナサン ワ ニッポン ノ ヨッツ ノ オーキナ シマ ノ ナマエ ヲ シッテ イ マス カ 。"
-val example63 =" ッテ"
-val example64 =" ッ"
-val example65 =" シッテ "
-val example66 =" ナマエ ヲ シッテ イ マス カ 。"
 
-printDebug(example62)
-printDebug(example63)
-printDebug(example64)
-printDebug(example65)
-printDebug(example66)
 
 //---TODO: Write tests
 //---TODO: Publish
