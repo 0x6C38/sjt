@@ -171,21 +171,7 @@ object Main {
     import JapaneseInstances._
     import JapaneseSyntax._
 
-    println("--Chars: Hiragana--")
-    println("Hiragana [Char] す to romaji = " + 'す'.toRomaji())
-    println("Hiragana [Char] す to katakana = " + 'す'.toKatakana())
-    println("--Chars: Katakana--")
-    println("Katakana [Char] ス to romaji = " + 'ス'.toRomaji())
-    println("Katakana [Char] ス to Hiragana = " + 'ス'.toHiragana())
-    println("--Chars: Special--")
-    println("Katakana [Char] ッ to romaji = " + 'ッ'.toRomaji())
-    println("Katakana [Char] ー to romaji = " + 'ー'.toHiragana())
-    println("Katakana [Char] ッ to hiragana = " + 'ッ'.toHiragana())
-    println("Katakana [Char] ー to hiragana = " + 'ー'.toHiragana())
-    println("--Chars: Romaji--")
-    println("Romaji   [Char] n to Hiragana = " + 'n'.toHiragana())
-    println("Romaji   [Char] o to Katakana = " + 'o'.toKatakana())
-    println("Romaji   [Char] j to Katakana = " + 'j'.toKatakana())
+
 
     println("--Strings: Kanji Sentences--")
     println("Kanji    [String] to romaji = " + "私は可愛いです".toRomaji())

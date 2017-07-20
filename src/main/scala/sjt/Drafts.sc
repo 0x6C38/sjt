@@ -138,7 +138,7 @@ Syllable.sWSmallY("ャク")
 
 //Kana.allKanaAndAllKanaExtendedVowelsAndConsonantsM
 
-/*
+
 printDebug(example1)
 printDebug(example2)
 printDebug(example3)
@@ -201,7 +201,7 @@ printDebug(example58)
 printDebug(example59)
 printDebug(example60)
 printDebug(example61)
-*/
+
 val example62 =" ミナサン ワ ニッポン ノ ヨッツ ノ オーキナ シマ ノ ナマエ ヲ シッテ イ マス カ 。"
 val example63 =" ッテ"
 val example64 =" ッ"
@@ -214,7 +214,5 @@ printDebug(example64)
 printDebug(example65)
 printDebug(example66)
 
-//---TODO: Correct issues with ッ at the end of a token --接続助詞 connective particles
-//---TODO: Add non-calculated fields in Kana
 //---TODO: Write tests
 //---TODO: Publish

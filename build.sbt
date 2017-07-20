@@ -5,9 +5,11 @@ lazy val root = (project in file(".")).
     inThisBuild(List(
       organization := "com.example",
       scalaVersion := "2.12.1",
-      version      := "0.1.0-SNAPSHOT"
+      version := "0.1.0-SNAPSHOT"
     )),
     name := "SJT",
     libraryDependencies += scalaTest % Test,
-    libraryDependencies += "com.atilika.kuromoji" % "kuromoji-ipadic" % "0.9.0"
-  )
+    libraryDependencies += "com.atilika.kuromoji" % "kuromoji-ipadic" % "0.9.0",
+    libraryDependencies += "org.scalactic" %% "scalactic" % "3.0.1",
+    libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "test"
+)
