@@ -65,7 +65,9 @@ def printDebug(s: String): Unit = {
   //println("---------------------------")
 
 }
-def transliterateAll(s:String, t:Tokenizer): Unit ={
+def transliterateAll(s: String, t: Tokenizer): Unit = {
+  println("------------------------")
+  println(s)
   println(s.toRomaji(t))
   println(s.toHiragana(t))
   println(s.toKatakana(t))

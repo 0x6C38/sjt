@@ -15,6 +15,7 @@ object Kana{
   //-- Symbols
   val translateableSymbols:Map[Char, Char] = Map('、' -> ',','。' -> '.','・' -> ' ', '！'-> '!', '？'->'?')
   def isTranslateableSymbol(c:Char):Boolean = translateableSymbols.keySet.contains(c)
+  def isTranslateableSymbol(s:String):Boolean = translateableSymbols.keySet.contains(s.head)
   //-- Vowels
   val katakanaVowelM:Map[Char, Char] = Map('ア'-> 'a','エ'-> 'e','イ'-> 'i','オ'-> 'o' ,'ウ'-> 'u') //,'n' -> 'ン', ',' -> '、'
   val katakanaSmallVowelM:Map[Char, Char] = Map('ァ'-> 'a','ェ'-> 'e','ィ'-> 'i','ォ'-> 'o' ,'ゥ'-> 'u')
@@ -253,7 +254,7 @@ object Kana{
   val allKanaAndAllKanaExtendedVowelsAndConsonantsM: Map[String, String] = (allKanaAndExtendedConsonantM.map{case (k,v) => (extendVowel(k),extendVowel(v))} ++ allKanaAndExtendedConsonantM) ++
                                                                            allKanaAndExtendedVowelsM.map{case (k,v) => (extendConsonant(k),extendConsonant(v))} ++ allKanaAndExtendedVowelsM
 
-  val allKanaToRomajiM = allKanaAndAllKanaExtendedVowelsAndConsonantsM //alias
+  val allKanaToRomajiM:Map[String,String] = allKanaAndAllKanaExtendedVowelsAndConsonantsM ++ translateableSymbols.map{case (k:Char, v:Char) => (k.toString, v.toString) } //adds symbols
   val allRomajiToKana: Map[String, String] = allKanaAndAllKanaExtendedVowelsAndConsonantsM.map { case (k, v) => (v, k) }
 
   val allHiraganaToRomajiM: Map[String, String] = allKanaAndAllKanaExtendedVowelsAndConsonantsM.filter { case (k, v) => k.isHiragana }
@@ -341,7 +342,7 @@ object Syllable{
   def romajiToKatakana(s:String):String = Kana.allRomajiToKatakanaM.get(s).getOrElse(s)
   def hiraganaOrRomajiToKatakana(s:String):String = Kana.allHiraganaToKatakanaM.get(s).getOrElse(Kana.allRomajiToKatakanaM.get(s).getOrElse(s))
 
-  def kanaSilableToRomaji(s: String): String = Kana.allKanaAndAllKanaExtendedVowelsAndConsonantsM.get(s).getOrElse(s.toString)
+  def kanaSilableToRomaji(s: String): String = Kana.allKanaToRomajiM.get(s).getOrElse(s.toString)
 
 }
 final case class NotSyllable(override val text:String) extends Syllable(text) //@$#!

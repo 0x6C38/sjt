@@ -168,8 +168,8 @@ object JapaneseSyntax {
 sealed trait SpacingConfig{
   def apply(t:Token):String = this match{
     case HiraganaSpacing() => ""
-    case KatakanaSpacing() => "・"
-    case RomajiSpacing() => if(t.getAllFeaturesArray()(1) == "接続助詞") "" else " "
+    case KatakanaSpacing() => if(Kana.isTranslateableSymbol(t.getSurface())) "" else "・"
+    case RomajiSpacing() => if(t.getAllFeaturesArray()(1) == "接続助詞" || Kana.isTranslateableSymbol(t.getSurface())) "" else " "
   }
 }
 final case class HiraganaSpacing() extends SpacingConfig()
@@ -242,6 +242,8 @@ object Main {
     transliterateAll("お寿司が食べたい", cachedTokenizer)
 
     def transliterateAll(s:String, t:Tokenizer): Unit ={
+      println("------------------------")
+      println(s)
       println(s.toRomaji(t))
       println(s.toHiragana(t))
       println(s.toKatakana(t))
