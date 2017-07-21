@@ -181,8 +181,6 @@ object Main {
     import JapaneseInstances._
     import JapaneseSyntax._
 
-
-
     println("--Strings: Kanji Sentences--")
     println("Kanji    [String] to romaji = " + "私は可愛いです".toRomaji())
     println("Kanji    [String] to romaji = " + "お寿司が食べたいです".toRomaji())

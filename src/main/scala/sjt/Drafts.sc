@@ -19,6 +19,14 @@ Japanese.isHiragana('c')
 'カ'.isKatakana
 
 Kana.allKatakanaToHiraganaM // doesn't have a single ン -> ん and has an incorrect ンー -> ん
+Kana.allHiraganaToKatakanaM // doesn't have a single ン -> ん and has an incorrect ん   -> ンー
+Kana.allKanaToRomajiM // has a ン -> n and a ん -> n
+Kana.allKanaToRomajiM.map { case (k, v) => (k, Syllable.kanaSilableToRomaji(k)) }
+// the problem is romajiToKatakana
+Kana.allRomajiToKatakanaM // has no n -> ン, it has n -> ンー
+Kana.allKanaAndAllKanaExtendedVowelsAndConsonantsM // has ン -> n
+Kana.allKatakanaToRomajiM //also has  ン -> n
+
 
 val exampleString = "お寿司が食べたい"
 val exampleString2 = "おすしがたべたいです"
@@ -79,6 +87,7 @@ transliterateAll("東京",cachedTokenizer)
 transliterateAll("にっぽん",cachedTokenizer)
 transliterateAll("日本",cachedTokenizer)
 transliterateAll("ニッポン",cachedTokenizer)
+transliterateAll("ン",cachedTokenizer)
 
 val example54 ="聞く"
 val example56 ="大きな"

@@ -258,13 +258,13 @@ object Kana{
   val allRomajiToKana: Map[String, String] = allKanaAndAllKanaExtendedVowelsAndConsonantsM.map { case (k, v) => (v, k) }
 
   val allHiraganaToRomajiM: Map[String, String] = allKanaAndAllKanaExtendedVowelsAndConsonantsM.filter { case (k, v) => k.isHiragana }
-  val allRomajiToHiraganaM: Map[String, String] = allHiraganaToRomajiM.map { case (k, v) => (v, k) }
+  val allRomajiToHiraganaM: Map[String, String] = allHiraganaToRomajiM.map { case (k, v) => (v, k) } + ("n" -> "ん")//seems like n is lost in this operation. As a simple solution, I add it manually
 
   val allKatakanaToRomajiM: Map[String, String] = allKanaAndAllKanaExtendedVowelsAndConsonantsM.filter { case (k, v) => k.isKatakana }
-  val allRomajiToKatakanaM: Map[String, String] = allKatakanaToRomajiM.map { case (k, v) => (v, k) }
+  val allRomajiToKatakanaM: Map[String, String] = allKatakanaToRomajiM.map { case (k, v) => (v, k) } + ("n" -> "ン")
 
   val allHiraganaToKatakanaM: Map[String, String] = allHiraganaToRomajiM.map { case (k, v) => (k, Syllable.romajiToKatakana(Syllable.kanaSilableToRomaji(k))) } //romajiSilableToKatakana
-  val allKatakanaToHiraganaM: Map[String, String] = allHiraganaToKatakanaM.map { case (k, v) => (v, k) }
+  val allKatakanaToHiraganaM: Map[String, String] = allHiraganaToKatakanaM.map { case (k, v) => (v, k) } + ("ン" -> "ん")
 
 
   def kanaToRomaji(c: Char): String = kanaM.get(c).getOrElse(c.toString)
