@@ -14,9 +14,9 @@ class KanjiTransliteration extends FlatSpec with Matchers{
 
   "Kanji" should "correctly transliterate to romaji" in {
     sentenceA.toRomaji() should be("o sushi ga tabe tai")
-    //sentenceB.toRomaji() should be("さ")
-    //sentenceC.toRomaji() should be("さ")
-    //sentenceD.toRomaji() should be("さ")
+    //sentenceB.toRomaji() should be("shinsatsu itte ki mashi ta. saishū mokuhyō wa shinzō ishoku toyuu no wa kawara nai sō de, jibun no shinzō ja iki rare nai mitai desu. okane mo kakarushi, shujutsu suru no mo nyūin suru no mo mō iya da na ～… nante koto wo kangaenagara vita de oboro mura sei wo purei shite mashi ta! 　 ushi oni to uma oni tte bosu yori tsuyoku nai!? 　 zenzen kate nai n dakedo …")
+    //sentenceC.toRomaji() should be("「 ima 」 okite iru koto wo mitsukeyo u. kokunai no nyūsu kara mijika na deki goto made, minna no wadai ga wakaru 「 ima 」 okite iru koto wo mitsukeyo u. kokunai no nyūsu kara mijika na deki goto made, minna no wadai ga wakaru")
+    //sentenceD.toRomaji() should be("minasan wa nippon no yottsu no ōkina shima no namae wo shitte i masu ka. nippon ni wa tōkyō no yō na, sekai ni yoku shira rete iru toshi ga takusan ari masuga, minasan wa donna toshi namae wo kiki ta koto ga ari masu ka.")
     sentenceE.toRomaji() should be("kiku")
     sentenceF.toRomaji() should be("ōkina")
     sentenceG.toRomaji() should be("tōkyō")
