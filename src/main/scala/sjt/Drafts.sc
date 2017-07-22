@@ -4,32 +4,75 @@ import sjt.JapaneseSyntax._
 import sjt.JapaneseInstances._
 import collection.JavaConverters._
 import scala.annotation.tailrec
+sjt.LeKana.hiragana
+sjt.LeKana.katakana
+sjt.LeKana.romaji
+
+sjt.LeKana.allRomajiEC
+sjt.LeKana.allKatakanaEC
+sjt.LeKana.allHiraganaEC
+//sjt.LeKana.allKanaEV
+sjt.LeKana.allKatakanaEV
+sjt.LeKana.allHiraganaEV
+sjt.LeKana.allRomajiEV
+
+sjt.LeKana.allKatakanaECEV
+sjt.LeKana.allHiraganaECEV
+sjt.LeKana.allRomajiECEV
+
+sjt.LeKana.everyKanaSyllable
+
+//LeKana.hiragana
+val cachedTokenizer = new Tokenizer()
 
 val t = 'c'
 
 t.isHiragana
-
 import JapaneseInstances._
 import JapaneseSyntax._
 
 Japanese.isHiragana('c')
-
 'j'.isHiragana
 'j'.isKatakana
 'カ'.isKatakana
+//Kana.allKatakanaToHiraganaM // doesn't have a single ン -> ん and has an incorrect ンー -> ん
+//Kana.allHiraganaToKatakanaM // doesn't have a single ン -> ん and has an incorrect ん   -> ンー
+//Kana.allKatakanaToRomajiM// has ja
+//Kana.allKatakanaToRomajiFilteredM //has ja
 
-Kana.allKatakanaToHiraganaM // doesn't have a single ン -> ん and has an incorrect ンー -> ん
-Kana.allHiraganaToKatakanaM // doesn't have a single ン -> ん and has an incorrect ん   -> ンー
-Kana.allKanaToRomajiM // has a ン -> n and a ん -> n
-Kana.allKanaToRomajiM.map { case (k, v) => (k, Syllable.kanaSilableToRomaji(k)) }
-// the problem is romajiToKatakana
-Kana.allRomajiToKatakanaM // has no n -> ン, it has n -> ンー
-Kana.allKanaAndAllKanaExtendedVowelsAndConsonantsM // has ン -> n
-Kana.allKatakanaToRomajiM //also has  ン -> n
+//Kana.allKanaFilteredUnprefered //has ja
+//Kana.allHiraganaToKatakanaFilteredM //doesn't have ja. Its lost inbetween these two
+
+//Kana.preferedHiM //has wrong ju
+//Kana.preferedKaM
+//Kana.preferedKanaToRomajiM
+"ジャ".isHiragana
+"ャ".isHiragana
+"ジ".isHiragana
+Kana.allKanaAndAllKanaExtendedVowelsAndConsonantsM //has hyo
+Kana.allKanaToRomajiM //has hyo
+Syllable.kanaSilableToRomaji("じょ")
+Syllable.kanaSilableToRomaji("ジョ")
+Syllable.romajiToHiragana("jo")
+Syllable.romajiToKatakana("jo")
+Syllable.katakanaToHiragana("ジョ")
+Syllable.hiraganaToKatakana("じょ")
+Syllable.hiraganaToKatakana("ジョ")
+Syllable.katakanaToHiragana("ヂョ")
+Syllable.katakanaToHiragana("ジャ")
+
+//Kana.allRomajiToKatakanaM.get("jo").getOrElse("jo") //romaji to katakana
+//Kana.allKatakanaToHiraganaM.get("ジョ").getOrElse("jo")
+"ジョジョ".toKatakana(cachedTokenizer)
+Syllable.katakanaToHiragana("ジョ")
+"ジョジョ".toHiragana(cachedTokenizer)
 
 
-val exampleString = "お寿司が食べたい"
-val exampleString2 = "おすしがたべたいです"
+//Kana.allHiraganaToRomajiM
+//Kana.allKatakanaToRomajiM
+/*
+//val exampleString = "お寿司が食べたい"
+//val exampleString2 = "おすしがたべたいです"
 val tokenizer = new Tokenizer()
 val tokens = tokenizer.tokenize(exampleString2).asScala.toArray
 val token: Token = tokens.head
@@ -40,17 +83,14 @@ println(romanizedTokens)
 //val ts3:String = tokens.flatMap(_.getPronunciation.map(_.toRomaji)).mkString
 val ts3: String = tokens.map(_.getPronunciation).mkString
 tokens.head.getPronunciation
-//def isHiragana(value:Char):Boolean = '\u3041' <= value
-//println(isHiragana('C'))
+*/
 import sjt._
 import sjt.JapaneseSyntax._
 import sjt.JapaneseInstances._
-
-"shiっte".indexOf("っ")
-'n'.isFullWidthKatakana
-
-
-
+"東京".toKatakana(cachedTokenizer)
+"ッ".toHiragana(cachedTokenizer)
+"jōjō".toKatakana(cachedTokenizer)
+printDebug("kiki")
 def printDebug(s: String): Unit = {
   //println("---------------------------")
   println(s"$s Original: $s, romaji: " + s.toRomaji() + " hiragana: " + s.toHiragana() + ", katakana: " +s.toKatakana()+ ", syllables: " + s.splitIntoSyllables)
@@ -80,7 +120,10 @@ def transliterateAll(s: String, t: Tokenizer): Unit = {
   println(s.toHiragana(t))
   println(s.toKatakana(t))
 }
-val cachedTokenizer = new Tokenizer()
+printDebug("じょじょ")
+printDebug("目標")
+printDebug("ヒョー")
+/*
 transliterateAll("聞く",cachedTokenizer)
 transliterateAll("大きな",cachedTokenizer)
 transliterateAll("東京",cachedTokenizer)
@@ -88,21 +131,36 @@ transliterateAll("にっぽん",cachedTokenizer)
 transliterateAll("日本",cachedTokenizer)
 transliterateAll("ニッポン",cachedTokenizer)
 transliterateAll("ン",cachedTokenizer)
+transliterateAll("お寿司が食べたい",cachedTokenizer)
 
 val example54 ="聞く"
 val example56 ="大きな"
 val example57 ="東京"
 val example59 ="見つけよう"//kuromoji error
-
 //Kana.allKanaAndAllKanaExtendedVowelsAndConsonantsM
-
 printDebug(example54)
-
 printDebug(example56)
 printDebug(example57)
 printDebug(example59)
+*/
+//Kana.allKanaToRomajiM
+//Kana.allRomajiToKanaM
+//Kana.allHiraganaToRomajiM//has wrong ju
+//Kana.allKanaToRomajiM //has wrong ju
 
-
+//Kana.allKanaAndAllKanaExtendedVowelsAndConsonantsM //has wrong
+//Kana.allKanaAndExtendedConsonantM// has wrong ju
+//Kana.allKanaAndExtendedConsonantM
+//Kana.allKatakanaToHiraganaM//no has ja
+//Kana.unpreferedKaTsM
+//Kana.preferedHiM
+//Kana.preferedKaM
+//Kana.allKanaToRomajiM // has a ン -> n and a ん -> n
+//Kana.allKanaToRomajiM.map { case (k, v) => (k, Syllable.kanaSilableToRomaji(k)) }
+// the problem is romajiToKatakana
+//Kana.allRomajiToKatakanaM // has no n -> ン, it has n -> ンー
+//Kana.allKanaAndAllKanaExtendedVowelsAndConsonantsM // has ン -> n
+//Kana.allKatakanaToRomajiM //also has  ン -> n
 
 //---TODO: Write tests
 //---TODO: Publish

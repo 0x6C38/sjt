@@ -18,7 +18,7 @@ class CharTransliteration extends FlatSpec with Matchers{
   }
 
   it should "correctly transliterate from hiragana to katakana" in {
-    'す'.toKatakana() should be('ス')
+    'す'.toKatakana() should be("ス")
     'ほ'.toKatakana() should be("ホ")
   }
   it should "correctly transliterate from katakana to katakana" in {
@@ -35,8 +35,8 @@ class CharTransliteration extends FlatSpec with Matchers{
   it should "correctly transliterate from hiragana to romaji" in {
     'す'.toRomaji() should be("su")
     'な'.toRomaji() should be("na")
-    'ろ'.toHiragana() should be("ro")
-    'さ'.toHiragana() should be("sa")
+    'ろ'.toRomaji() should be("ro")
+    'さ'.toRomaji() should be("sa")
   }
   it should "correctly transliterate from katakana to romaji" in {
     'ス'.toRomaji() should be ("su")

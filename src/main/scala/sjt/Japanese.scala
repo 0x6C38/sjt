@@ -50,7 +50,7 @@ object JapaneseInstances{
   }
 
   implicit val japaneseChar = new Japanese[Char] {
-    def isHiragana(value: Char): Boolean = ('\u3041' <= value) && (value <= '\u309e')
+    def isHiragana(value: Char): Boolean = ('\u3041' <= value) && (value <= '\u309e') || isExtension(value)
     def isHalfWidthKatakana(value: Char):Boolean = ('\uff66' <= value) && (value <= '\uff9d')
     def isFullWidthKatakana(value: Char):Boolean = ('\u30a1' <= value) && (value <= '\u30fe')
     def isKanji(value: Char): Boolean = (('\u4e00' <= value) && (value <= '\u9fa5')) || (('\u3005' <= value) && (value <= '\u3007'))
@@ -77,6 +77,7 @@ object JapaneseInstances{
   }
 
   implicit val japaneseString = new Japanese[String] {
+
     def isHiragana(value: String): Boolean = value.toCharArray.forall(japaneseChar.isHiragana)
     def isHalfWidthKatakana(value: String):Boolean = value.toCharArray.forall(japaneseChar.isHalfWidthKatakana)
     def isFullWidthKatakana(value: String):Boolean = value.toCharArray.forall(japaneseChar.isFullWidthKatakana)
@@ -101,7 +102,7 @@ object JapaneseInstances{
 
     private def tokensToRomajiString(ts:List[Token], s:SpacingConfig) = ts.foldLeft(""){(r,t:Token) => r + s(t) +  (if (t.getPronunciation != "*") t.getPronunciation else t.getReading)} //prev: getSurface
     private def tokensToHiraganaString(ts:List[Token], s:SpacingConfig) = ts.foldLeft(""){(r,t:Token) => r + s(t) +  t.getReading}
-    private def tokensToKatakanaString(ts:List[Token], s:SpacingConfig) = ts.foldLeft(""){(r,t:Token) => r + s(t) +  t.getReading}
+    private def tokensToKatakanaString(ts:List[Token], s:SpacingConfig) = ts.foldLeft(""){(r,t:Token) => r + s(t) +  (if (t.getPronunciation != "*") t.getPronunciation else t.getReading)}
 
     @tailrec
     override def splitIntoSyllables(input: String, l: List[Syllable] = Nil): List[Syllable] = {

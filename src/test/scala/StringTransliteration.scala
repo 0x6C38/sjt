@@ -11,10 +11,10 @@ class StringTransliteration extends FlatSpec with Matchers{
     "ぎんこ".toHiragana() should be("ぎんこ")
   }
   it should "correctly transliterate from katakana to hiragana" in {
-    "じょじょ".toHiragana() should be("ジョジョ")
-    "じょうじょう".toHiragana() should be("ジョージョー")
-    "じゃく".toHiragana() should be("ジャク")
-    "しって".toHiragana() should be("シッテ")
+    "ジョジョ".toHiragana() should be("じょじょ")
+    "ジョージョー".toHiragana() should be("じょうじょう")
+    "ジャク".toHiragana() should be("じゃく")
+    "シッテ".toHiragana() should be("しって")
     "ナマエ ヲ シッテ イ マス カ".toHiragana() should be("なまえ を しって い ます か")
     "ニッポン".toHiragana() should be("にっぽん")
   }
@@ -25,34 +25,37 @@ class StringTransliteration extends FlatSpec with Matchers{
     "gyū".toHiragana() should be("ぎゅう")
     "tta".toHiragana() should be("った")
     "ggyū".toHiragana() should be("っぎゅう")
-    "ttō".toHiragana() should be("っと")
+    "tto".toHiragana() should be("っと")
+    "ttō".toHiragana() should be("っとう")
     "tōkyō".toHiragana() should be("とうきょう")
     "tōkyōkyōto".toHiragana() should be("とうきょうきょうと")
     "ji".toHiragana() should be("じ")
     "shasshin".toHiragana() should be("しゃっしん")
     "sshaberu".toHiragana() should be("っしゃべる")
     "jjinkusu".toHiragana() should be("っじんくす")
-
     "jojo".toHiragana() should be("じょじょ")
     "jōjō".toHiragana() should be("じょうじょう")
     "shitte".toHiragana() should be("しって")
     "tte".toHiragana() should be("って")
     "tō#$kyō".toHiragana() should be("とう#$きょう")
-
   }
 
   it should "correctly transliterate from hiragana to katakana" in {
-    "おさか".toKatakana() should be("アラスカ")
+    "おさか".toKatakana() should be("オサカ")
     "あ".toKatakana() should be("ア")
     "お".toKatakana() should be("オ")
     "っじんくす".toKatakana() should be("ッジンクス")
     "じゃく".toKatakana() should be("ジャク")
     "ぎんこ".toKatakana() should be("ギンコ")
     "きき".toKatakana() should be("キキ")
-
+    "じょじょ".toKatakana() should be("ジョジョ")
+    "じょうじょう".toKatakana() should be("ジョージョー")
+    "じゃく".toKatakana() should be("ジャク")
+    "しって".toKatakana() should be("シッテ")
   }
+
   it should "correctly transliterate from katakana to katakana" in {
-    "アラスカ".toKatakana() should be("オサカ")
+    "アラスカ".toKatakana() should be("アラスカ")
     "ッジンクス".toKatakana() should be("ッジンクス")
   }
   it should "correctly transliterate from romaji to katakana" in {
@@ -76,7 +79,7 @@ class StringTransliteration extends FlatSpec with Matchers{
     "っとう".toRomaji() should be("ttō")
     "った".toRomaji() should be("tta")
     "とうきょう".toRomaji() should be("tōkyō")
-    "とうきょうきょうと".toRomaji() should be("tōkyōkyotō")
+    "とうきょうきょうと".toRomaji() should be("tōkyōkyōto")
 
     "ぎゅ".toRomaji() should be("gyu")
     "ぎゅう".toRomaji() should be("gyū")
@@ -101,7 +104,7 @@ class StringTransliteration extends FlatSpec with Matchers{
     "コーヒー".toRomaji() should be("kōhī")
     "ジャク".toRomaji() should be("jaku")
     "ニャンコ".toRomaji() should be("nyanko")
-    "リグオブレジェンド".toRomaji() should be("rīguoburejendo")
+    "リグオブレジェンド".toRomaji() should be("riguoburejendo")
     "オスシガタベタイデス".toRomaji() should be("osushigatabetaidesu")
     "ワタシハカワイイデス".toRomaji() should be("watashihakawaiidesu")
     "ッジンクス".toRomaji() should be("jjinkusu")

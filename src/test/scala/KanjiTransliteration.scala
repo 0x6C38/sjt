@@ -23,22 +23,22 @@ class KanjiTransliteration extends FlatSpec with Matchers{
   }
 
   it should "correctly transliterate to hiragana" in {
-    sentenceA.toHiragana() should be("お すし が たべ たい")
+    sentenceA.toHiragana() should be("おすしがたべたい")
     sentenceB.toHiragana() should be("しんさついってきました。さいしゅうもくひょうはしんぞういちょくというのはかわらないそうで、ジぶんのしんぞうぢゃいきられないみたいです。おかねもかかるし、しゅジュつするのもにゅういんするのももういやだな*なんてことをかんがえながら*でおぼろむらせいを*してました！　うしおにとうまおにってぼすよりつよくない！？　ぜんぜんかてないんだけど…")
     sentenceC.toHiragana() should be("「いま」おきていることをみつけよう。こくないのにゅうすからみぢかなできごとまで、みんなのわだいがわかる「いま」おきていることをみつけよう。こくないのにゅうすからみぢかなできごとまで、みんなのわだいがわかる")
     sentenceD.toHiragana() should be("みなさんはにっぽんのよっつのおおきなしまのなまえをしっていますか。にっぽんにはとうきょうのような、せかいによくしられているとしがたくさんありますが、みなさんはどんなとしなまえをききたことがありますか。")
     sentenceE.toHiragana() should be("きく")
-    sentenceF.toHiragana() should be("おうきな")
+    sentenceF.toHiragana() should be("おおきな")
     sentenceG.toHiragana() should be("とうきょう")
   }
 
   it should "correctly transliterate to katakana" in {
-    sentenceA.toKatakana() should be("オ スシ ガ タベ タイ")
+    sentenceA.toKatakana() should be("オ・スシ・ガ・タベ・タイ")
     sentenceB.toKatakana() should be("シンサツ・イッ・テ・キ・マシ・タ。・サイシュウ・モクヒョウ・ハ・シンゾウ・イショク・トイウ・ノ・ハ・カワラ・ナイ・ソウ・デ、・ジブン・ノ・シンゾウ・ジャ・イキ・ラレ・ナイ・ミタイ・デス。・オカネ・モ・カカル・シ、・シュジュツ・スル・ノ・モ・ニュウイン・スル・ノ・モ・モウ・イヤ・ダ・ナ・*・ナンテ・コト・ヲ・カンガエ・ナガラ・*・デ・オボロ・ムラ・セイ・ヲ・*・シ・テ・マシ・タ！・　・ウシ・オニ・ト・ウマ・オニ・ッテ・ボス・ヨリ・ツヨク・ナイ！？・　・ゼンゼン・カテ・ナイ・ン・ダ・ケド・…")
     sentenceC.toKatakana() should be("「・イマ・」・オキ・テ・イル・コト・ヲ・ミツケヨ・ウ。・コクナイ・ノ・ニュース・カラ・ミヂカ・ナ・デキ・ゴト・マデ、・ミンナ・ノ・ワダイ・ガ・ワカル・「・イマ・」・オキ・テ・イル・コト・ヲ・ミツケヨ・ウ。・コクナイ・ノ・ニュース・カラ・ミヂカ・ナ・デキ・ゴト・マデ、・ミンナ・ノ・ワダイ・ガ・ワカル")
     sentenceD.toKatakana() should be("ミナサン・ハ・ニッポン・ノ・ヨッツ・ノ・オオキナ・シマ・ノ・ナマエ・ヲ・シッ・テ・イ・マス・カ。・ニッポン・ニ・ハ・トウキョウ・ノ・ヨウ・ナ、・セカイ・ニ・ヨク・シラ・レ・テ・イル・トシ・ガ・タクサン・アリ・マス・ガ、・ミナサン・ハ・ドンナ・トシ・ナマエ・ヲ・キキ・タ・コト・ガ・アリ・マス・カ。")
     sentenceE.toKatakana() should be("キク")
-    sentenceF.toKatakana() should be("オーキナ")
+    sentenceF.toKatakana() should be("オオキナ")
     sentenceG.toKatakana() should be("トーキョー")
   }
 }
