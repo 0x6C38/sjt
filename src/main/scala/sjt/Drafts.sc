@@ -4,6 +4,7 @@ import sjt.JapaneseSyntax._
 import sjt.JapaneseInstances._
 import collection.JavaConverters._
 import scala.annotation.tailrec
+/*
 sjt.LeKana.hiragana
 sjt.LeKana.katakana
 sjt.LeKana.romaji
@@ -11,7 +12,7 @@ sjt.LeKana.romaji
 sjt.LeKana.allRomajiEC
 sjt.LeKana.allKatakanaEC
 sjt.LeKana.allHiraganaEC
-//sjt.LeKana.allKanaEV
+
 sjt.LeKana.allKatakanaEV
 sjt.LeKana.allHiraganaEV
 sjt.LeKana.allRomajiEV
@@ -22,6 +23,8 @@ sjt.LeKana.allRomajiECEV
 
 sjt.LeKana.everyKanaSyllable
 
+*/
+sjt.LeKana.allKana
 //LeKana.hiragana
 val cachedTokenizer = new Tokenizer()
 
@@ -30,6 +33,36 @@ val t = 'c'
 t.isHiragana
 import JapaneseInstances._
 import JapaneseSyntax._
+
+
+@tailrec
+def splitIntoSyllables(input: String, l: List[(LeKana, String)] = Nil): List[(LeKana,String)] = {
+  val nS = LeKana.nextSyllable(input)
+  if (input.isEmpty) l
+  else splitIntoSyllables(input.drop(nS._2.length), l.::(nS))
+}
+
+val r1 = splitIntoSyllables("ごく")
+val r2 = splitIntoSyllables("ろそこ")
+val r3 = splitIntoSyllables("しゃく")
+val r4 = splitIntoSyllables("しょうしょう")
+val r5 = splitIntoSyllables("ジョジョ")
+val r6 = splitIntoSyllables("ジョージョー")
+val r7 = splitIntoSyllables("ろんだk")
+
+LeKana.toRomaji(r6)
+LeKana.toRomaji(r3)
+LeKana.toRomaji(r7)
+LeKana.toKatakana(r7)
+LeKana.toHiragana(r7)
+
+
+"ろんだk".toHiragana(cachedTokenizer)
+"ろんだk".toKatakana(cachedTokenizer)
+//splitIntoSyllables(" オ スシ ガ タベ タイ")
+" オ スシ ガ タベ タイ".toRomaji(cachedTokenizer)
+splitIntoSyllables("とうきょう")
+//" オ スシ ガ タベ タイ".toRomaji(cachedTokenizer)
 
 Japanese.isHiragana('c')
 'j'.isHiragana
@@ -65,7 +98,7 @@ Syllable.katakanaToHiragana("ジャ")
 //Kana.allKatakanaToHiraganaM.get("ジョ").getOrElse("jo")
 "ジョジョ".toKatakana(cachedTokenizer)
 Syllable.katakanaToHiragana("ジョ")
-"ジョジョ".toHiragana(cachedTokenizer)
+" オ スシ ガ タベ タイ".toRomaji(cachedTokenizer)
 
 
 //Kana.allHiraganaToRomajiM

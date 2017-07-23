@@ -24,7 +24,9 @@ trait Japanese[A] {
   def toRomaji(value: A, tokenizer:Option[Tokenizer] = None): String
   def toKatakana(value: A, tokenizer:Option[Tokenizer] = None): String
   def toHiragana(value: A, tokenizer:Option[Tokenizer] = None): String
-  def splitIntoSyllables(value:A, l: List[Syllable] = Nil): List[Syllable]
+  //def splitIntoSyllables(value:A, l: List[Syllable] = Nil): List[Syllable]
+  def splitIntoSyllables(input:A, l: List[(LeKana, String)] = Nil): List[(LeKana,String)]
+
 }
 object JapaneseInstances{
   implicit val japaneseSyllable = new Japanese[Syllable] {
@@ -45,8 +47,11 @@ object JapaneseInstances{
     override def toKatakana(value: Syllable, tokenizer:Option[Tokenizer] = None): String = Syllable.hiraganaOrRomajiToKatakana(value.text)
     override def toHiragana(value: Syllable, tokenizer:Option[Tokenizer] = None): String = Syllable.katakanaOrRomajiToHiragana(value.text)
 
-    override def splitIntoSyllables(value: Syllable, l: List[Syllable]): List[Syllable] = List(value)
+    //override def splitIntoSyllables(value: Syllable, l: List[Syllable]): List[Syllable] = List(value)
 
+    //override def splitIntoSyllables2(input: String, l: List[(LeKana, String)]): List[(LeKana, String)] = ???
+    //def splitIntoSyllables(value:A, l: List[Syllable] = Nil): List[Syllable]
+    override def splitIntoSyllables(input: Syllable, l: List[(LeKana, String)]): List[(LeKana, String)] = ???
   }
 
   implicit val japaneseChar = new Japanese[Char] {
@@ -68,11 +73,13 @@ object JapaneseInstances{
     def extendChar(value:Char):Char = Map('a' -> 'ā', 'e' -> 'ē', 'i' -> 'ī', 'o'-> 'ō', 'u' -> 'ū').get(value).getOrElse(value)
     def isExtension(value:Char):Boolean = Map('ゃ' -> 'a', 'ゅ'->'u', 'ょ'->'o', 'ャ' -> 'a', 'ュ' -> 'u', 'ョ' -> 'o').get(value).isDefined
 
-    override def toRomaji(value: Char, tokenizer:Option[Tokenizer] = None): String = japaneseSyllable.toRomaji(splitIntoSyllables(value).head)
-    override def toKatakana(value: Char, tokenizer:Option[Tokenizer] = None): String = japaneseSyllable.toKatakana(splitIntoSyllables(value).head)
-    override def toHiragana(value: Char, tokenizer:Option[Tokenizer] = None): String = japaneseSyllable.toHiragana(splitIntoSyllables(value).head)
+    override def toRomaji(value: Char, tokenizer:Option[Tokenizer] = None): String = LeKana.toRomaji(splitIntoSyllables(value))
+    override def toKatakana(value: Char, tokenizer:Option[Tokenizer] = None): String = LeKana.toKatakana(splitIntoSyllables(value))
+    override def toHiragana(value: Char, tokenizer:Option[Tokenizer] = None): String = LeKana.toHiragana(splitIntoSyllables(value))
 
-    override def splitIntoSyllables(value: Char, l: List[Syllable] = Nil): List[Syllable] = List(Syllable.nextSyllable(value.toString))
+    //override def splitIntoSyllables(value: Char, l: List[Syllable] = Nil): List[Syllable] = List(Syllable.nextSyllable(value.toString))
+
+    override def splitIntoSyllables(input: Char, l: List[(LeKana, String)]): List[(LeKana, String)] =  List(LeKana.nextSyllable(input.toString))
 
   }
 
@@ -87,8 +94,29 @@ object JapaneseInstances{
     def containsKanji(value: String): Boolean = value.toCharArray.exists(japaneseChar.containsKanji)
     def isLatin(value: String): Boolean = value.toCharArray.forall(japaneseChar.isLatin)
 
+    @tailrec
+    override def splitIntoSyllables(input: String, l: List[(LeKana, String)] = Nil): List[(LeKana,String)] = {
+      val nS = LeKana.nextSyllable(input)
+      if (input.isEmpty) l
+      else splitIntoSyllables(input.drop(nS._2.length), l.::(nS))
+    }
+
     def toRomaji(value: String, tokenizer:Option[Tokenizer] = Some(new Tokenizer())):String = {
-      if (!containsKanji(value)) splitIntoSyllables(value).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toRomaji(s))
+      if (!containsKanji(value)) LeKana.toRomaji(splitIntoSyllables(value))
+      else LeKana.toRomaji(splitIntoSyllables(tokensToRomajiString(tokenizer.get.tokenize(value).asScala.toList, RomajiSpacing())))
+    }
+    def toHiragana(value: String, tokenizer:Option[Tokenizer] = Some(new Tokenizer())):String = {
+      if (!containsKanji(value)) LeKana.toHiragana(splitIntoSyllables(value))
+      else LeKana.toHiragana(splitIntoSyllables(tokensToHiraganaString(tokenizer.get.tokenize(value).asScala.toList, HiraganaSpacing())))
+    }
+    def toKatakana(value: String, tokenizer:Option[Tokenizer] = Some(new Tokenizer())):String = {
+      if (!containsKanji(value)) LeKana.toKatakana(splitIntoSyllables(value))
+      else LeKana.toKatakana(splitIntoSyllables(tokensToKatakanaString(tokenizer.get.tokenize(value).asScala.toList, KatakanaSpacing()))).tail
+    }
+
+    /*
+    def toRomaji(value: String, tokenizer:Option[Tokenizer] = Some(new Tokenizer())):String = {
+      if (!containsKanji(value)) splitIntoSyllables(value).foldLeft("")((a,s) => a + japaneseSyllable.toRomaji(s))
       else splitIntoSyllables(tokensToRomajiString(tokenizer.get.tokenize(value).asScala.toList, RomajiSpacing())).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toRomaji(s)).trim
     }
     def toHiragana(value: String, tokenizer:Option[Tokenizer] = Some(new Tokenizer())):String = {
@@ -99,10 +127,21 @@ object JapaneseInstances{
       if (!containsKanji(value)) splitIntoSyllables(value).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toKatakana(s))
       else splitIntoSyllables(tokensToKatakanaString(tokenizer.get.tokenize(value).asScala.toList, KatakanaSpacing())).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toKatakana(s)).tail
     }
+    */
 
-    private def tokensToRomajiString(ts:List[Token], s:SpacingConfig) = ts.foldLeft(""){(r,t:Token) => r + s(t) +  (if (t.getPronunciation != "*") t.getPronunciation else t.getReading)} //prev: getSurface
-    private def tokensToHiraganaString(ts:List[Token], s:SpacingConfig) = ts.foldLeft(""){(r,t:Token) => r + s(t) +  t.getReading}
-    private def tokensToKatakanaString(ts:List[Token], s:SpacingConfig) = ts.foldLeft(""){(r,t:Token) => r + s(t) +  (if (t.getPronunciation != "*") t.getPronunciation else t.getReading)}
+    private def tokensToRomajiString(ts:List[Token], s:SpacingConfig) = ts.foldLeft(""){(r,t:Token) => r + s(t) +  (if (t.getPronunciation != "*") t.getPronunciation else t.getReading)}.trim //prev: getSurface
+    private def tokensToHiraganaString(ts:List[Token], s:SpacingConfig) = ts.foldLeft(""){(r,t:Token) => r + s(t) +  t.getReading}.trim
+    private def tokensToKatakanaString(ts:List[Token], s:SpacingConfig) = ts.foldLeft(""){(r,t:Token) => r + s(t) +  (if (t.getPronunciation != "*") t.getPronunciation else t.getReading)}.trim
+
+
+    /*
+    @tailrec
+    def splitIntoSyllables(input: String, l: List[(LeKana, String)] = Nil): List[(LeKana,String)] = {
+      val nS = LeKana.nextSyllable(input)
+      if (input.isEmpty) l
+      else splitIntoSyllables(input.drop(nS._1.toString.length), nS :: l)
+    }
+
 
     @tailrec
     override def splitIntoSyllables(input: String, l: List[Syllable] = Nil): List[Syllable] = {
@@ -110,7 +149,7 @@ object JapaneseInstances{
       if (input.isEmpty) l
       else splitIntoSyllables(input.drop(nS.text.length), nS :: l)
     }
-
+ */
   }
   implicit val kuromojiToken = new Japanese[Token] {
     def isHiragana(value: Token): Boolean = japaneseString.isHiragana(value.getSurface)
@@ -121,10 +160,12 @@ object JapaneseInstances{
     def containsKatakana(value: Token): Boolean = japaneseString.containsKatakana(value.getSurface)
     def containsKanji(value: Token): Boolean = japaneseString.containsKanji(value.getSurface)
     def isLatin(value: Token): Boolean = japaneseString.isLatin(value.getSurface)
-    def toRomaji(value: Token, tokenizer:Option[Tokenizer] = None): String = splitIntoSyllables(value).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toRomaji(s))
-    def toKatakana(value: Token, tokenizer:Option[Tokenizer] = None): String = splitIntoSyllables(value).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toKatakana(s))
-    def toHiragana(value: Token, tokenizer:Option[Tokenizer] = None): String = splitIntoSyllables(value).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toHiragana(s))
-    override def splitIntoSyllables(value: Token, l: List[Syllable]): List[Syllable] = japaneseString.splitIntoSyllables(if (value.getPronunciation != "*") value.getPronunciation else value.getSurface)
+    def toRomaji(value: Token, tokenizer:Option[Tokenizer] = None): String = LeKana.toRomaji(splitIntoSyllables(value))
+    def toKatakana(value: Token, tokenizer:Option[Tokenizer] = None): String = LeKana.toKatakana(splitIntoSyllables(value))
+    def toHiragana(value: Token, tokenizer:Option[Tokenizer] = None): String = LeKana.toHiragana(splitIntoSyllables(value))
+    //override def splitIntoSyllables(value: Token, l: List[Syllable]): List[Syllable] = japaneseString.splitIntoSyllables(if (value.getPronunciation != "*") value.getPronunciation else value.getSurface)
+
+    override def splitIntoSyllables(input: Token, l: List[(LeKana, String)]): List[(LeKana, String)] = japaneseString.splitIntoSyllables(if (input.getPronunciation != "*") input.getPronunciation else input.getSurface)
   }
 }
 object Japanese {
@@ -143,7 +184,7 @@ object Japanese {
   def toRomaji[A](input: A)(implicit p: Japanese[A]): String = p.toRomaji(input)
   def toKatakana[A](input:A)(implicit p: Japanese[A]): String = p.toKatakana(input)
   def toHiragana[A](input:A)(implicit p: Japanese[A]): String = p.toHiragana(input)
-  def splitIntoSyllables[A](input:A)(implicit p: Japanese[A]):List[Syllable] = p.splitIntoSyllables(input)
+  def splitIntoSyllables[A](input:A)(implicit p: Japanese[A]):List[(LeKana, String)] = p.splitIntoSyllables(input)
 }
 
 object JapaneseSyntax {
@@ -164,7 +205,7 @@ object JapaneseSyntax {
     def toRomaji(t:Tokenizer = null)(implicit p: Japanese[A]): String = if (t != null) p.toRomaji(value, Some(t)) else p.toRomaji(value)
     def toKatakana(t:Tokenizer = null)(implicit p: Japanese[A]): String = if (t != null) p.toKatakana(value, Some(t)) else p.toKatakana(value)
     def toHiragana(t:Tokenizer = null)(implicit p: Japanese[A]): String = if (t != null) p.toHiragana(value, Some(t)) else p.toHiragana(value)
-    def splitIntoSyllables(implicit p: Japanese[A]):List[Syllable] = p.splitIntoSyllables(value)
+    def splitIntoSyllables(implicit p: Japanese[A]):List[(LeKana, String)] = p.splitIntoSyllables(value)
   }
 }
 sealed trait SpacingConfig{
