@@ -24,37 +24,11 @@ trait Japanese[A] {
   def toRomaji(value: A, tokenizer:Option[Tokenizer] = None): String
   def toKatakana(value: A, tokenizer:Option[Tokenizer] = None): String
   def toHiragana(value: A, tokenizer:Option[Tokenizer] = None): String
-  //def splitIntoSyllables(value:A, l: List[Syllable] = Nil): List[Syllable]
   def splitIntoSyllables(input:A, l: List[(LeKana, String)] = Nil): List[(LeKana,String)]
-
 }
+
 object JapaneseInstances{
-  /*
-  implicit val japaneseSyllable = new Japanese[Syllable] {
 
-    override def isHiragana(value: Syllable): Boolean = Kana.allHiraganaToRomajiM.keySet.contains(value.text)
-    override def isHalfWidthKatakana(value: Syllable): Boolean = false //calculated by a fair dice roll
-    override def isFullWidthKatakana(value: Syllable): Boolean = Kana.allKatakanaToRomajiM.keySet.contains(value.text)
-
-    override def isKanji(value: Syllable): Boolean = value.text.toCharArray.forall(value => (('\u4e00' <= value) && (value <= '\u9fa5')) || (('\u3005' <= value) && (value <= '\u3007')))
-
-    override def containsHiragana(value: Syllable): Boolean = value.text.exists(c => Kana.isHiragana(c))
-    override def containsKatakana(value: Syllable): Boolean = value.text.exists(c => Kana.isKatakana(c))
-    override def containsKanji(value: Syllable): Boolean = value.text.exists(value => (('\u4e00' <= value) && (value <= '\u9fa5')) || (('\u3005' <= value) && (value <= '\u3007')))
-
-    override def isLatin(value: Syllable): Boolean = value.text.matches("[a-zA-Z].*")
-
-    override def toRomaji(value: Syllable, tokenizer:Option[Tokenizer] = None): String = Syllable.kanaSilableToRomaji(value.text)
-    override def toKatakana(value: Syllable, tokenizer:Option[Tokenizer] = None): String = Syllable.hiraganaOrRomajiToKatakana(value.text)
-    override def toHiragana(value: Syllable, tokenizer:Option[Tokenizer] = None): String = Syllable.katakanaOrRomajiToHiragana(value.text)
-
-    //override def splitIntoSyllables(value: Syllable, l: List[Syllable]): List[Syllable] = List(value)
-
-    //override def splitIntoSyllables2(input: String, l: List[(LeKana, String)]): List[(LeKana, String)] = ???
-    //def splitIntoSyllables(value:A, l: List[Syllable] = Nil): List[Syllable]
-    override def splitIntoSyllables(input: Syllable, l: List[(LeKana, String)]): List[(LeKana, String)] = ???
-  }
-*/
   implicit val japaneseChar = new Japanese[Char] {
     def isHiragana(value: Char): Boolean = ('\u3041' <= value) && (value <= '\u309e') || isExtension(value)
     def isHalfWidthKatakana(value: Char):Boolean = ('\uff66' <= value) && (value <= '\uff9d')
@@ -78,10 +52,7 @@ object JapaneseInstances{
     override def toKatakana(value: Char, tokenizer:Option[Tokenizer] = None): String = if (value == 'っ') "ッ" else LeKana.toKatakana(splitIntoSyllables(value))
     override def toHiragana(value: Char, tokenizer:Option[Tokenizer] = None): String = if (value == 'ッ') "っ" else LeKana.toHiragana(splitIntoSyllables(value))
 
-    //override def splitIntoSyllables(value: Char, l: List[Syllable] = Nil): List[Syllable] = List(Syllable.nextSyllable(value.toString))
-
     override def splitIntoSyllables(input: Char, l: List[(LeKana, String)]): List[(LeKana, String)] =  List(LeKana.nextSyllable(input.toString))
-
   }
 
   implicit val japaneseString = new Japanese[String] {
@@ -115,42 +86,10 @@ object JapaneseInstances{
       else LeKana.toKatakana(splitIntoSyllables(tokensToKatakanaString(tokenizer.get.tokenize(value).asScala.toList, KatakanaSpacing()))).tail
     }
 
-    /*
-    def toRomaji(value: String, tokenizer:Option[Tokenizer] = Some(new Tokenizer())):String = {
-      if (!containsKanji(value)) splitIntoSyllables(value).foldLeft("")((a,s) => a + japaneseSyllable.toRomaji(s))
-      else splitIntoSyllables(tokensToRomajiString(tokenizer.get.tokenize(value).asScala.toList, RomajiSpacing())).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toRomaji(s)).trim
-    }
-    def toHiragana(value: String, tokenizer:Option[Tokenizer] = Some(new Tokenizer())):String = {
-      if (!containsKanji(value)) splitIntoSyllables(value).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toHiragana(s))
-      else splitIntoSyllables(tokensToHiraganaString(tokenizer.get.tokenize(value).asScala.toList, HiraganaSpacing())).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toHiragana(s)).trim
-    }
-    def toKatakana(value: String, tokenizer:Option[Tokenizer] = Some(new Tokenizer())):String = {
-      if (!containsKanji(value)) splitIntoSyllables(value).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toKatakana(s))
-      else splitIntoSyllables(tokensToKatakanaString(tokenizer.get.tokenize(value).asScala.toList, KatakanaSpacing())).reverse.foldLeft("")((a,s) => a + japaneseSyllable.toKatakana(s)).tail
-    }
-    */
-
-    private def tokensToRomajiString(ts:List[Token], s:SpacingConfig) = ts.foldLeft(""){(r,t:Token) => r + s(t) +  (if (t.getPronunciation != "*") t.getPronunciation else t.getReading)}.trim //prev: getSurface
+    private def tokensToRomajiString(ts:List[Token], s:SpacingConfig) = ts.foldLeft(""){(r,t:Token) => r + s(t) +  (if (t.getPronunciation != "*") t.getPronunciation else t.getReading)}.trim
     private def tokensToHiraganaString(ts:List[Token], s:SpacingConfig) = ts.foldLeft(""){(r,t:Token) => r + s(t) +  t.getReading}.trim
     private def tokensToKatakanaString(ts:List[Token], s:SpacingConfig) = ts.foldLeft(""){(r,t:Token) => r + s(t) +  (if (t.getPronunciation != "*") t.getPronunciation else t.getReading)}.trim
 
-
-    /*
-    @tailrec
-    def splitIntoSyllables(input: String, l: List[(LeKana, String)] = Nil): List[(LeKana,String)] = {
-      val nS = LeKana.nextSyllable(input)
-      if (input.isEmpty) l
-      else splitIntoSyllables(input.drop(nS._1.toString.length), nS :: l)
-    }
-
-
-    @tailrec
-    override def splitIntoSyllables(input: String, l: List[Syllable] = Nil): List[Syllable] = {
-      val nS = Syllable.nextSyllable(input)
-      if (input.isEmpty) l
-      else splitIntoSyllables(input.drop(nS.text.length), nS :: l)
-    }
- */
   }
   implicit val kuromojiToken = new Japanese[Token] {
     def isHiragana(value: Token): Boolean = japaneseString.isHiragana(value.getSurface)
@@ -164,7 +103,6 @@ object JapaneseInstances{
     def toRomaji(value: Token, tokenizer:Option[Tokenizer] = None): String = LeKana.toRomaji(splitIntoSyllables(value))
     def toKatakana(value: Token, tokenizer:Option[Tokenizer] = None): String = LeKana.toKatakana(splitIntoSyllables(value))
     def toHiragana(value: Token, tokenizer:Option[Tokenizer] = None): String = LeKana.toHiragana(splitIntoSyllables(value))
-    //override def splitIntoSyllables(value: Token, l: List[Syllable]): List[Syllable] = japaneseString.splitIntoSyllables(if (value.getPronunciation != "*") value.getPronunciation else value.getSurface)
 
     override def splitIntoSyllables(input: Token, l: List[(LeKana, String)]): List[(LeKana, String)] = japaneseString.splitIntoSyllables(if (input.getPronunciation != "*") input.getPronunciation else input.getSurface)
   }
@@ -224,62 +162,6 @@ object Main {
   def main(args: Array[String]): Unit = {
     import JapaneseInstances._
     import JapaneseSyntax._
-
-
-    println("Kanji    [String] to romaji = " + "皆さんは日本の四つの大きな島の名前を知っていますか。日本には東京のような、世界によく知られている都市がたくさんありますが、皆さんはどんな都市名前を聞きたことがありますか。".toRomaji()) //467 vs 495
-    val t1 = System.currentTimeMillis()
-    println("毎日私は午前十時に起きます。十時から十二まで勉強します。午後一時に昼ごはんを食べます。あとでまた勉強をします。六時に地下鉄で大学へ行きます。十一時に私の家へ帰ります。そして晩ご飯を食べます。次に少し仕事をします。プログラミンをします。難しいです。それでも、私は大好きです。なぜならとても楽しいですから。朝の五時にねます。".toRomaji())
-    println("診察行ってきました。最終目標は心臓移植というのは変わらないそうで、自分の心臓じゃ生きられないみたいです。お金もかかるし、手術するのも入院するのももう嫌だな～…なんてことを考えながらvitaで朧村正をプレイしてました！　牛鬼と馬鬼ってボスより強くない！？　ぜんぜん勝てないんだけど…".toRomaji())
-    println("「いま」起きていることを見つけよう。国内のニュースから身近なできごとまで、みんなの話題がわかる「いま」起きていることを見つけよう。国内のニュースから身近なできごとまで、みんなの話題がわかる".toRomaji())
-    println("皆さんは日本の四つの大きな島の名前を知っていますか。日本には東京のような、世界によく知られている都市がたくさんありますが、皆さんはどんな都市名前を聞きたことがありますか。".toRomaji())
-    val t2 = System.currentTimeMillis()
-    val deltaT = t2-t1
-    println(s"Δt = $deltaT")
-
-    val cachedTokenizer = new Tokenizer()
-    val t3 = System.currentTimeMillis()
-    println("毎日私は午前十時に起きます。十時から十二まで勉強します。午後一時に昼ごはんを食べます。あとでまた勉強をします。六時に地下鉄で大学へ行きます。十一時に私の家へ帰ります。そして晩ご飯を食べます。次に少し仕事をします。プログラミンをします。難しいです。それでも、私は大好きです。なぜならとても楽しいですから。朝の五時にねます。".toRomaji(cachedTokenizer))
-    println("診察行ってきました。最終目標は心臓移植というのは変わらないそうで、自分の心臓じゃ生きられないみたいです。お金もかかるし、手術するのも入院するのももう嫌だな～…なんてことを考えながらvitaで朧村正をプレイしてました！　牛鬼と馬鬼ってボスより強くない！？　ぜんぜん勝てないんだけど…".toRomaji(cachedTokenizer))
-    println("「いま」起きていることを見つけよう。国内のニュースから身近なできごとまで、みんなの話題がわかる「いま」起きていることを見つけよう。国内のニュースから身近なできごとまで、みんなの話題がわかる".toRomaji(cachedTokenizer))
-    println("皆さんは日本の四つの大きな島の名前を知っていますか。日本には東京のような、世界によく知られている都市がたくさんありますが、皆さんはどんな都市名前を聞きたことがありますか。".toRomaji(cachedTokenizer))
-
-    val t4 = System.currentTimeMillis()
-    val deltaT2 = t4-t3
-    println(s"Δt = $deltaT2 ~ 479 chars. 100k chars ~ 3.5 seconds")
-
-    println("皆さんは日本の四つの大きな島の名前を知っていますか。日本には東京のような、世界によく知られている都市がたくさんありますが、皆さんはどんな都市名前を聞きたことがありますか。".toKatakana(cachedTokenizer))
-    println("皆さんは日本の四つの大きな島の名前を知っていますか。日本には東京のような、世界によく知られている都市がたくさんありますが、皆さんはどんな都市名前を聞きたことがありますか。".toHiragana(cachedTokenizer))
-
-    println("-----------------")
-    printAllFeatures("リーグ@オブ@レジェンド")
-    println("-----------------")
-    printAllFeatures("見つけよう")
-    println("-----------------")
-    printAllFeatures("皆さんは日本の四つの大きな島の名前を知っていますか")
-
-    def transliterateAll(s:String, t:Tokenizer): Unit ={
-      println("------------------------")
-      println(s)
-      println(s.toRomaji(t))
-      println(s.toHiragana(t))
-      println(s.toKatakana(t))
-    }
-
-    val t5 = System.currentTimeMillis()
-    transliterateAll("毎日私は午前十時に起きます。十時から十二まで勉強します。午後一時に昼ごはんを食べます。あとでまた勉強をします。六時に地下鉄で大学へ行きます。十一時に私の家へ帰ります。そして晩ご飯を食べます。次に少し仕事をします。プログラミンをします。難しいです。それでも、私は大好きです。なぜならとても楽しいですから。朝の五時にねます。", cachedTokenizer)
-    transliterateAll("診察行ってきました。最終目標は心臓移植というのは変わらないそうで、自分の心臓じゃ生きられないみたいです。お金もかかるし、手術するのも入院するのももう嫌だな～…なんてことを考えながらvitaで朧村正をプレイしてました！　牛鬼と馬鬼ってボスより強くない！？　ぜんぜん勝てないんだけど…", cachedTokenizer)
-    transliterateAll("「いま」起きていることを見つけよう。国内のニュースから身近なできごとまで、みんなの話題がわかる「いま」起きていることを見つけよう。国内のニュースから身近なできごとまで、みんなの話題がわかる", cachedTokenizer)
-    transliterateAll("皆さんは日本の四つの大きな島の名前を知っていますか。日本には東京のような、世界によく知られている都市がたくさんありますが、皆さんはどんな都市名前を聞きたことがありますか。", cachedTokenizer)
-    transliterateAll("お寿司が食べたい", cachedTokenizer)
-    val t6 = System.currentTimeMillis()
-    val deltaT3 = t6-t5
-    println(s"Δt = $deltaT3 ~ 479 chars. 100k chars ~ 3.5 seconds")
-
   }
 
-  def printAllFeatures(s:String):Unit = new Tokenizer().tokenize(s).asScala.toArray.foreach(t => println(t.getSurface() + ": " + t.getAllFeatures + "| " + t.getAllFeaturesArray()(1) + " | Pronunciation: " + t.getPronunciation))
-
-  def strToRomaji(s: String):Unit = {
-    new Tokenizer().tokenize(s).asScala.toArray.foreach(_.getAllFeatures)
-  }
 }

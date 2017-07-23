@@ -102,11 +102,11 @@ object LeKana {
   val everyKanaSyllable: Set[String] = everyRomajiSyllable ++ everyKatakanaSyllable ++ everyHiraganaSyllable
 
   def featuresByLength(k: LeKana) = List(k.toHi.toString, k.toKa.toString, k.toRo.toString, k.toHi.extendVowel(), k.toHi.extendConsonant(), k.toHi.extendVowelAndConsonant(), k.toKa.extendVowel(), k.toKa.extendConsonant(), k.toKa.extendVowelAndConsonant(),k.toRo.extendVowel(), k.toRo.extendConsonant(), k.toRo.extendVowelAndConsonant()).sortWith(_.length > _.length)
-  val ka:Map[LeKana, List[String]] = preferedKana.map(k => (k -> featuresByLength(k))).toMap
-  val yo:Map[LeKana, List[String]] = preferedYoon.map(k => (k -> featuresByLength(k))).toMap
-  val yoCHs:Map[LeKana, List[String]] = unpreferedYoonDiacritics.map(k => (k -> featuresByLength(k))).toMap
-  val kaUP:Map[LeKana, List[String]] = unpreferedDiacritics.map(k => (k -> featuresByLength(k))).toMap
-  val sym:Map[LeKana, List[String]] = translateableSymbols.map(k => (k -> featuresByLength(k))).toMap
+  private val ka:Map[LeKana, List[String]] = preferedKana.map(k => (k -> featuresByLength(k))).toMap
+  private val yo:Map[LeKana, List[String]] = preferedYoon.map(k => (k -> featuresByLength(k))).toMap
+  private val yoCHs:Map[LeKana, List[String]] = unpreferedYoonDiacritics.map(k => (k -> featuresByLength(k))).toMap
+  private val kaUP:Map[LeKana, List[String]] = unpreferedDiacritics.map(k => (k -> featuresByLength(k))).toMap
+  private val sym:Map[LeKana, List[String]] = translateableSymbols.map(k => (k -> featuresByLength(k))).toMap
 
 
   def nextSyllable(s: String): (LeKana,String) = {
