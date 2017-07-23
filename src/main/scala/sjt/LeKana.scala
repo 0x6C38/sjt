@@ -29,21 +29,25 @@ object LeKana {
 
   import LeKana._
 
-  val nonDiacritics = Set[LeKana](Hiragana("あ", "ア", "a"), Hiragana("か", "カ", "ka"), Hiragana("さ", "サ", "sa"), Hiragana("た", "タ", "ta"), Hiragana("な", "ナ", "na"), Hiragana("は", "八", "ha"), Hiragana("ま", "マ", "ma"), Hiragana("や", "ヤ", "ya"), Hiragana("ら", "ラ", "ra"), Hiragana("わ", "ワ", "wa")
+  val nonDiacritics = Set[LeKana](Hiragana("あ", "ア", "a"), Hiragana("か", "カ", "ka"), Hiragana("さ", "サ", "sa"), Hiragana("た", "タ", "ta"), Hiragana("な", "ナ", "na"), Hiragana("は", "ハ", "ha"), Hiragana("ま", "マ", "ma"), Hiragana("や", "ヤ", "ya"), Hiragana("ら", "ラ", "ra"), Hiragana("わ", "ワ", "wa")
     , Hiragana("い", "イ", "i"), Hiragana("き", "キ", "ki"), Hiragana("し", "シ", "shi"), Hiragana("ち", "チ", "chi"), Hiragana("に", "ニ", "ni"), Hiragana("ひ", "ヒ", "hi"), Hiragana("み", "ミ", "mi"), Hiragana("り", "リ", "ri")
-    , Hiragana("う", "ワ", "u"), Hiragana("く", "ク", "ku"), Hiragana("す", "ス", "su"), Hiragana("つ", "シ", "tsu"), Hiragana("ぬ", "ヌ", "nu"), Hiragana("ふ", "フ", "fu"), Hiragana("む", "ム", "mu"), Hiragana("ゆ", "ユ", "yu"), Hiragana("る", "ル", "ru")
+    , Hiragana("う", "ウ", "u"), Hiragana("く", "ク", "ku"), Hiragana("す", "ス", "su"), Hiragana("つ", "ツ", "tsu"), Hiragana("ぬ", "ヌ", "nu"), Hiragana("ふ", "フ", "fu"), Hiragana("む", "ム", "mu"), Hiragana("ゆ", "ユ", "yu"), Hiragana("る", "ル", "ru")
     , Hiragana("え", "エ", "e"), Hiragana("け", "ケ", "ke"), Hiragana("せ", "セ", "se"), Hiragana("て", "テ", "te"), Hiragana("ね", "ネ", "ne"), Hiragana("へ", "ヘ", "he"), Hiragana("め", "メ", "me"), Hiragana("れ", "レ", "re")
     , Hiragana("お", "オ", "o"), Hiragana("こ", "コ", "ko"), Hiragana("そ", "ソ", "so"), Hiragana("と", "ト", "to"), Hiragana("の", "ノ", "no"), Hiragana("ほ", "ホ", "ho"), Hiragana("も", "モ", "mo"), Hiragana("よ", "ヨ", "yo"), Hiragana("ろ", "ロ", "ro"), Hiragana("を", "ヲ", "wo")
     , Hiragana("ん", "ン", "n"))
 
 
-  val diacritics = Set[LeKana](Hiragana("が", "ガ", "ga"), Hiragana("ざ", "ザ", "za"), Hiragana("だ", "ダ", "da"), Hiragana("ば", "バ", "ba"), Hiragana("ぱ", "パ", "pa")
-    , Hiragana("ぎ", "ギ", "gi"), Hiragana("じ", "ジ", "ji"), Hiragana("ぢ", "ヂ", "ji"), Hiragana("び", "ビ", "bi"), Hiragana("ぴ", "ピ", "pi")
+  private val preferedDiacritics = Set[LeKana](Hiragana("が", "ガ", "ga"), Hiragana("ざ", "ザ", "za"), Hiragana("だ", "ダ", "da"), Hiragana("ば", "バ", "ba"), Hiragana("ぱ", "パ", "pa")
+    , Hiragana("ぎ", "ギ", "gi"), Hiragana("じ", "ジ", "ji"), Hiragana("び", "ビ", "bi"), Hiragana("ぴ", "ピ", "pi")
     , Hiragana("ぐ", "グ", "gu"), Hiragana("ず", "ズ", "zu"), Hiragana("づ", "ヅ", "dzu"), Hiragana("ぶ", "ブ", "bu"), Hiragana("ぷ", "プ", "pu")
     , Hiragana("げ", "ゲ", "ge"), Hiragana("ぜ", "ゼ", "ze"), Hiragana("で", "デ", "de"), Hiragana("べ", "ベ", "be"), Hiragana("ぺ", "ペ", "pe")
     , Hiragana("ご", "ゴ", "go"), Hiragana("ぞ", "ゾ", "zo"), Hiragana("ど", "ド", "do"), Hiragana("ぼ", "ボ", "bo"), Hiragana("ぽ", "ポ", "po"))
+  private val unpreferedDiacritics = List(Hiragana("ぢ", "ヂ", "ji"))
+  val diacritics = preferedDiacritics ++ unpreferedDiacritics
 
+  private val preferedKana = nonDiacritics ++ preferedDiacritics
   val kana = nonDiacritics ++ diacritics
+
 
   val hiragana = kana.map(_.toHi)
   val katakana = kana.map(_.toKa)
@@ -51,14 +55,21 @@ object LeKana {
 
 
   val yoonNonDiacritics = Set[LeKana](Hiragana("きゃ", "キャ", "kya"), Hiragana("しゃ", "シャ", "sha"), Hiragana("ちゃ", "チャ", "cha"), Hiragana("にゃ", "ニャ", "nya"), Hiragana("ひゃ", "ヒャ", "hya"), Hiragana("みゃ", "ミャ", "mya"), Hiragana("りゃ", "リャ", "rya")
-    , Hiragana("きゅ", "キュ", "kyu"), Hiragana("しゅ", "シュ", "shu"), Hiragana("ちゅ", "チュ", "chu"), Hiragana("にゅ", "ニュ", "nyu"), Hiragana("ひゅ", "ヒュ", "hyu"), Hiragana("みゅ", "ミュ", "myu"), Hiragana("りゅ", "リュ", "ryu")
-    , Hiragana("きょ", "キョ", "kyo"), Hiragana("しょ", "ショ", "sho"), Hiragana("ちょ", "チョ", "cho"), Hiragana("にょ", "ニョ", "nyo"), Hiragana("ひょ", "ヒョ", "hyo"), Hiragana("みょ", "ミョ", "myo"), Hiragana("りょ", "リョ", "ryo"))
+                                     ,Hiragana("きゅ", "キュ", "kyu"), Hiragana("しゅ", "シュ", "shu"), Hiragana("ちゅ", "チュ", "chu"), Hiragana("にゅ", "ニュ", "nyu"), Hiragana("ひゅ", "ヒュ", "hyu"), Hiragana("みゅ", "ミュ", "myu"), Hiragana("りゅ", "リュ", "ryu")
+                                     ,Hiragana("きょ", "キョ", "kyo"), Hiragana("しょ", "ショ", "sho"), Hiragana("ちょ", "チョ", "cho"), Hiragana("にょ", "ニョ", "nyo"), Hiragana("ひょ", "ヒョ", "hyo"), Hiragana("みょ", "ミョ", "myo"), Hiragana("りょ", "リョ", "ryo"))
 
-  val yoonDiacritics = Set[LeKana](Hiragana("ぎゃ", "ギャ", "gya"), Hiragana("じゃ", "ジャ", "ja"), Hiragana("ぢゃ", "ヂャ", "ja"), Hiragana("びゃ", "ビャ", "bya")
-    , Hiragana("ぎゅ", "ギュ", "gyu"), Hiragana("じゅ", "ジュ", "ju"), Hiragana("ぢゅ", "ヂュ", "ju"), Hiragana("びゅ", "ビュ", "byu")
-    , Hiragana("ぎょ", "ギョ", "gyo"), Hiragana("じょ", "ジョ", "jo"), Hiragana("ぢょ", "ヂョ", "jo"), Hiragana("びょ", "ビョ", "byo"))
+  private val preferedYoonDiacritics = Set[LeKana](Hiragana("ぎゃ", "ギャ", "gya"), Hiragana("じゃ", "ジャ", "ja"), Hiragana("びゃ", "ビャ", "bya")
+                                                  ,Hiragana("ぎゅ", "ギュ", "gyu"), Hiragana("じゅ", "ジュ", "ju"), Hiragana("びゅ", "ビュ", "byu")
+                                                  ,Hiragana("ぎょ", "ギョ", "gyo"), Hiragana("じょ", "ジョ", "jo"), Hiragana("びょ", "ビョ", "byo"))
+
+  private val unpreferedYoonDiacritics = Set(Hiragana("ぢゃ", "ヂャ", "ja"),Hiragana("ぢゅ", "ヂュ", "ju"),Hiragana("ぢょ", "ヂョ", "jo"), Hiragana("じぇ", "ジェ", "je"))
+
+  val yoonDiacritics = preferedYoonDiacritics ++ unpreferedYoonDiacritics
 
   val yoon: Set[LeKana] = yoonDiacritics ++ yoonNonDiacritics
+  private val preferedYoon: Set[LeKana] = preferedYoonDiacritics ++ yoonNonDiacritics
+
+  val translateableSymbols:Set[LeKana] = Set(Hiragana("、", "、", ","),Hiragana("。", "。", "."),Hiragana("！", "！", "!"),Hiragana("？", "？", "?"))
 
   val allKana: Set[LeKana] = kana ++ yoon
   val allHiragana: Set[LeKana] = allKana.map(_.toHi)
@@ -90,18 +101,35 @@ object LeKana {
   val everyRomajiSyllable: Set[String] = allRomajiStr ++ allRomajiEC ++ allRomajiEV ++ allRomajiECEV
   val everyKanaSyllable: Set[String] = everyRomajiSyllable ++ everyKatakanaSyllable ++ everyHiraganaSyllable
 
-  //untested
-  def nextSyllable(s: String): (LeKana,String) = {
-    def featuresByLength(k: LeKana) = List(k.toHi.toString, k.toKa.toString, k.toRo.toString, k.toHi.extendVowel(), k.toHi.extendConsonant(), k.toHi.extendVowelAndConsonant(), k.toKa.extendVowel(), k.toKa.extendConsonant(), k.toKa.extendVowelAndConsonant(),k.toRo.extendVowel(), k.toRo.extendConsonant(), k.toRo.extendVowelAndConsonant()).sortWith(_.length > _.length)
-    val entries:Map[LeKana, List[String]] = allKana.map(k => (k -> featuresByLength(k))).toMap
+  def featuresByLength(k: LeKana) = List(k.toHi.toString, k.toKa.toString, k.toRo.toString, k.toHi.extendVowel(), k.toHi.extendConsonant(), k.toHi.extendVowelAndConsonant(), k.toKa.extendVowel(), k.toKa.extendConsonant(), k.toKa.extendVowelAndConsonant(),k.toRo.extendVowel(), k.toRo.extendConsonant(), k.toRo.extendVowelAndConsonant()).sortWith(_.length > _.length)
+  val ka:Map[LeKana, List[String]] = preferedKana.map(k => (k -> featuresByLength(k))).toMap
+  val yo:Map[LeKana, List[String]] = preferedYoon.map(k => (k -> featuresByLength(k))).toMap
+  val yoCHs:Map[LeKana, List[String]] = unpreferedYoonDiacritics.map(k => (k -> featuresByLength(k))).toMap
+  val kaUP:Map[LeKana, List[String]] = unpreferedDiacritics.map(k => (k -> featuresByLength(k))).toMap
+  val sym:Map[LeKana, List[String]] = translateableSymbols.map(k => (k -> featuresByLength(k))).toMap
 
-    for (entry <- entries){
-      for (index <- 0 to 11) {
-        val element:String = entry._2(index)
-        if (s.length >= element.length && s.take(element.length) == element){
-          println(s.take(element.length) + " == " + element)
-          return (entry._1, element)
-        }
+
+  def nextSyllable(s: String): (LeKana,String) = {
+    for (index <- 0 to 11) {
+      for (entry <- yo) {
+        val element: String = entry._2(index)
+        if (s.length >= element.length && s.take(element.length) == element) return (entry._1, element)
+      }
+      for (entry <- yoCHs) {
+        val element: String = entry._2(index)
+        if (s.length >= element.length && s.take(element.length) == element) return (entry._1, element)
+      }
+      for (entry <- ka) {
+        val element: String = entry._2(index)
+        if (s.length >= element.length && s.take(element.length) == element) return (entry._1, element)
+      }
+      for (entry <- kaUP) {
+        val element: String = entry._2(index)
+        if (s.length >= element.length && s.take(element.length) == element) return (entry._1, element)
+      }
+      for (entry <- sym) {
+        val element: String = entry._2(index)
+        if (s.length >= element.length && s.take(element.length) == element) return (entry._1, element)
       }
     }
     val noValue = if (s.headOption.isDefined) s.head.toString else ""
@@ -114,8 +142,8 @@ object LeKana {
     else if (k._1.toHi.extendConsonant() == k._2 || k._1.toKa.extendConsonant() == k._2 || k._1.toRo.extendConsonant() == k._2) f(k._1).extendConsonant()
     else f(k._1).extendVowelAndConsonant()
   }
-  def toRomaji(ks:List[(LeKana, String)]):String = ks.reverse.foldLeft("")((k,v) => k + transliterate(v, l => l.toRo))
-  def toHiragana(ks:List[(LeKana, String)]):String = ks.reverse.foldLeft("")((k,v) => k + transliterate(v, l => l.toHi))
+  def toRomaji(ks:List[(LeKana, String)]):String = ks.reverse.foldLeft("")((k,v) => k + transliterate(v, l => l.toRo)).replaceAll("・", " ")
+  def toHiragana(ks:List[(LeKana, String)]):String = ks.reverse.foldLeft("")((k,v) => k + transliterate(v, l => l.toHi)).replaceAll("・", "")
   def toKatakana(ks:List[(LeKana, String)]):String = ks.reverse.foldLeft("")((k,v) => k + transliterate(v, l => l.toKa))
 
 }

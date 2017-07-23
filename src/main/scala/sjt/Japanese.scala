@@ -29,6 +29,7 @@ trait Japanese[A] {
 
 }
 object JapaneseInstances{
+  /*
   implicit val japaneseSyllable = new Japanese[Syllable] {
 
     override def isHiragana(value: Syllable): Boolean = Kana.allHiraganaToRomajiM.keySet.contains(value.text)
@@ -53,7 +54,7 @@ object JapaneseInstances{
     //def splitIntoSyllables(value:A, l: List[Syllable] = Nil): List[Syllable]
     override def splitIntoSyllables(input: Syllable, l: List[(LeKana, String)]): List[(LeKana, String)] = ???
   }
-
+*/
   implicit val japaneseChar = new Japanese[Char] {
     def isHiragana(value: Char): Boolean = ('\u3041' <= value) && (value <= '\u309e') || isExtension(value)
     def isHalfWidthKatakana(value: Char):Boolean = ('\uff66' <= value) && (value <= '\uff9d')
@@ -74,8 +75,8 @@ object JapaneseInstances{
     def isExtension(value:Char):Boolean = Map('ゃ' -> 'a', 'ゅ'->'u', 'ょ'->'o', 'ャ' -> 'a', 'ュ' -> 'u', 'ョ' -> 'o').get(value).isDefined
 
     override def toRomaji(value: Char, tokenizer:Option[Tokenizer] = None): String = LeKana.toRomaji(splitIntoSyllables(value))
-    override def toKatakana(value: Char, tokenizer:Option[Tokenizer] = None): String = LeKana.toKatakana(splitIntoSyllables(value))
-    override def toHiragana(value: Char, tokenizer:Option[Tokenizer] = None): String = LeKana.toHiragana(splitIntoSyllables(value))
+    override def toKatakana(value: Char, tokenizer:Option[Tokenizer] = None): String = if (value == 'っ') "ッ" else LeKana.toKatakana(splitIntoSyllables(value))
+    override def toHiragana(value: Char, tokenizer:Option[Tokenizer] = None): String = if (value == 'ッ') "っ" else LeKana.toHiragana(splitIntoSyllables(value))
 
     //override def splitIntoSyllables(value: Char, l: List[Syllable] = Nil): List[Syllable] = List(Syllable.nextSyllable(value.toString))
 
@@ -98,7 +99,7 @@ object JapaneseInstances{
     override def splitIntoSyllables(input: String, l: List[(LeKana, String)] = Nil): List[(LeKana,String)] = {
       val nS = LeKana.nextSyllable(input)
       if (input.isEmpty) l
-      else splitIntoSyllables(input.drop(nS._2.length), l.::(nS))
+      else splitIntoSyllables(input.drop(nS._2.length), nS :: l)
     }
 
     def toRomaji(value: String, tokenizer:Option[Tokenizer] = Some(new Tokenizer())):String = {
@@ -224,24 +225,6 @@ object Main {
     import JapaneseInstances._
     import JapaneseSyntax._
 
-    println("--Strings: Kanji Sentences--")
-    println("Kanji    [String] to romaji = " + "私は可愛いです".toRomaji())
-    println("Kanji    [String] to romaji = " + "お寿司が食べたいです".toRomaji())
-
-    println("--Strings: Single Words Kanji--")
-    println("Kanji    [String] to romaji = " + "可愛い".toRomaji())
-    println("Kanji    [String] to romaji = " + "私".toRomaji())
-    println("Kanji    [String] to romaji = " + "大きな".toRomaji())
-    println("--Strings: Single Words Kanji Diphthong--")
-    println("Kanji    [String] to romaji = " + "東京".toRomaji())
-    println("Kanji    [String] to romaji = " + "牛乳".toRomaji())
-    println("Kanji    [String] to romaji = " + "喋ります".toRomaji())
-
-    println("--Strings: Special--")
-    println("Katakana [String] to romaji = " + "リーグ・オブ・レジェンド".toRomaji())
-    println("Katakana [String] to romaji = " + "リーグ@オブ@レジェンド".toRomaji())
-
-    val cachedTokenizer = new Tokenizer()
 
     println("Kanji    [String] to romaji = " + "皆さんは日本の四つの大きな島の名前を知っていますか。日本には東京のような、世界によく知られている都市がたくさんありますが、皆さんはどんな都市名前を聞きたことがありますか。".toRomaji()) //467 vs 495
     val t1 = System.currentTimeMillis()
@@ -253,7 +236,7 @@ object Main {
     val deltaT = t2-t1
     println(s"Δt = $deltaT")
 
-
+    val cachedTokenizer = new Tokenizer()
     val t3 = System.currentTimeMillis()
     println("毎日私は午前十時に起きます。十時から十二まで勉強します。午後一時に昼ごはんを食べます。あとでまた勉強をします。六時に地下鉄で大学へ行きます。十一時に私の家へ帰ります。そして晩ご飯を食べます。次に少し仕事をします。プログラミンをします。難しいです。それでも、私は大好きです。なぜならとても楽しいですから。朝の五時にねます。".toRomaji(cachedTokenizer))
     println("診察行ってきました。最終目標は心臓移植というのは変わらないそうで、自分の心臓じゃ生きられないみたいです。お金もかかるし、手術するのも入院するのももう嫌だな～…なんてことを考えながらvitaで朧村正をプレイしてました！　牛鬼と馬鬼ってボスより強くない！？　ぜんぜん勝てないんだけど…".toRomaji(cachedTokenizer))
@@ -274,14 +257,6 @@ object Main {
     println("-----------------")
     printAllFeatures("皆さんは日本の四つの大きな島の名前を知っていますか")
 
-
-
-    transliterateAll("毎日私は午前十時に起きます。十時から十二まで勉強します。午後一時に昼ごはんを食べます。あとでまた勉強をします。六時に地下鉄で大学へ行きます。十一時に私の家へ帰ります。そして晩ご飯を食べます。次に少し仕事をします。プログラミンをします。難しいです。それでも、私は大好きです。なぜならとても楽しいですから。朝の五時にねます。", cachedTokenizer)
-    transliterateAll("診察行ってきました。最終目標は心臓移植というのは変わらないそうで、自分の心臓じゃ生きられないみたいです。お金もかかるし、手術するのも入院するのももう嫌だな～…なんてことを考えながらvitaで朧村正をプレイしてました！　牛鬼と馬鬼ってボスより強くない！？　ぜんぜん勝てないんだけど…", cachedTokenizer)
-    transliterateAll("「いま」起きていることを見つけよう。国内のニュースから身近なできごとまで、みんなの話題がわかる「いま」起きていることを見つけよう。国内のニュースから身近なできごとまで、みんなの話題がわかる", cachedTokenizer)
-    transliterateAll("皆さんは日本の四つの大きな島の名前を知っていますか。日本には東京のような、世界によく知られている都市がたくさんありますが、皆さんはどんな都市名前を聞きたことがありますか。", cachedTokenizer)
-    transliterateAll("お寿司が食べたい", cachedTokenizer)
-
     def transliterateAll(s:String, t:Tokenizer): Unit ={
       println("------------------------")
       println(s)
@@ -289,8 +264,16 @@ object Main {
       println(s.toHiragana(t))
       println(s.toKatakana(t))
     }
-    //println("-----------------")
-    //printAllFeatures("診察行ってきました。最終目標は心臓移植というのは変わらないそうで、自分の心臓じゃ生きられないみたいです。お金もかかるし、手術するのも入院するのももう嫌だな～…なんてことを考えながらvitaで朧村正をプレイしてました！　牛鬼と馬鬼ってボスより強くない！？　ぜんぜん勝てないんだけど…")
+
+    val t5 = System.currentTimeMillis()
+    transliterateAll("毎日私は午前十時に起きます。十時から十二まで勉強します。午後一時に昼ごはんを食べます。あとでまた勉強をします。六時に地下鉄で大学へ行きます。十一時に私の家へ帰ります。そして晩ご飯を食べます。次に少し仕事をします。プログラミンをします。難しいです。それでも、私は大好きです。なぜならとても楽しいですから。朝の五時にねます。", cachedTokenizer)
+    transliterateAll("診察行ってきました。最終目標は心臓移植というのは変わらないそうで、自分の心臓じゃ生きられないみたいです。お金もかかるし、手術するのも入院するのももう嫌だな～…なんてことを考えながらvitaで朧村正をプレイしてました！　牛鬼と馬鬼ってボスより強くない！？　ぜんぜん勝てないんだけど…", cachedTokenizer)
+    transliterateAll("「いま」起きていることを見つけよう。国内のニュースから身近なできごとまで、みんなの話題がわかる「いま」起きていることを見つけよう。国内のニュースから身近なできごとまで、みんなの話題がわかる", cachedTokenizer)
+    transliterateAll("皆さんは日本の四つの大きな島の名前を知っていますか。日本には東京のような、世界によく知られている都市がたくさんありますが、皆さんはどんな都市名前を聞きたことがありますか。", cachedTokenizer)
+    transliterateAll("お寿司が食べたい", cachedTokenizer)
+    val t6 = System.currentTimeMillis()
+    val deltaT3 = t6-t5
+    println(s"Δt = $deltaT3 ~ 479 chars. 100k chars ~ 3.5 seconds")
 
   }
 
