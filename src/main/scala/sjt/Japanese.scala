@@ -75,20 +75,24 @@ object JapaneseInstances{
 
     def toRomaji(value: String, tokenizer:Option[Tokenizer] = Some(new Tokenizer())):String = {
       if (!containsKanji(value)) Kana.toRomaji(splitIntoSyllables(value))
-      else Kana.toRomaji(splitIntoSyllables(tokensToRomajiString(tokenizer.get.tokenize(value).asScala.toList, RomajiSpacing())))
+      else Kana.toRomaji(splitIntoSyllables(tokensToRomajiString(tokenizer.get.tokenize(value).asScala.toList)))
     }
     def toHiragana(value: String, tokenizer:Option[Tokenizer] = Some(new Tokenizer())):String = {
       if (!containsKanji(value)) Kana.toHiragana(splitIntoSyllables(value))
-      else Kana.toHiragana(splitIntoSyllables(tokensToHiraganaString(tokenizer.get.tokenize(value).asScala.toList, HiraganaSpacing())))
+      else Kana.toHiragana(splitIntoSyllables(tokensToHiraganaString(tokenizer.get.tokenize(value).asScala.toList)))
     }
     def toKatakana(value: String, tokenizer:Option[Tokenizer] = Some(new Tokenizer())):String = {
       if (!containsKanji(value)) Kana.toKatakana(splitIntoSyllables(value))
-      else Kana.toKatakana(splitIntoSyllables(tokensToKatakanaString(tokenizer.get.tokenize(value).asScala.toList, KatakanaSpacing()))).tail
+      else Kana.toKatakana(splitIntoSyllables(tokensToKatakanaString(tokenizer.get.tokenize(value).asScala.toList))).tail
     }
 
-    private def tokensToRomajiString(ts:List[Token], s:SpacingConfig) = ts.foldLeft(""){(r,t:Token) => r + s(t) +  (if (t.getPronunciation != "*") t.getPronunciation else t.getReading)}.trim
-    private def tokensToHiraganaString(ts:List[Token], s:SpacingConfig) = ts.foldLeft(""){(r,t:Token) => r + s(t) +  t.getReading}.trim
-    private def tokensToKatakanaString(ts:List[Token], s:SpacingConfig) = ts.foldLeft(""){(r,t:Token) => r + s(t) +  (if (t.getPronunciation != "*") t.getPronunciation else t.getReading)}.trim
+    private def hiraganaSpacing(t:Token) = ""
+    private def katakanaSpacing(t:Token) = if(Kana.isTranslateableSymbol(t.getSurface())) "" else "・"
+    private def romajiSpacing(t:Token) = if(t.getAllFeaturesArray()(1) == "接続助詞" || Kana.isTranslateableSymbol(t.getSurface())) "" else " "
+
+    private def tokensToRomajiString(ts:List[Token]) = ts.foldLeft(""){(r,t:Token) => r + romajiSpacing(t) +  (if (t.getPronunciation != "*") t.getPronunciation else t.getReading)}.trim
+    private def tokensToHiraganaString(ts:List[Token]) = ts.foldLeft(""){(r,t:Token) => r + hiraganaSpacing(t) +  t.getReading}.trim
+    private def tokensToKatakanaString(ts:List[Token]) = ts.foldLeft(""){(r,t:Token) => r + katakanaSpacing(t) +  (if (t.getPronunciation != "*") t.getPronunciation else t.getReading)}.trim
 
   }
   implicit val kuromojiToken = new Japanese[Token] {

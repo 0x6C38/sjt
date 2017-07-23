@@ -12,13 +12,6 @@ sealed trait Kana {
 
   def extendConsonant(s: String = this.toString): String
 
-  /*
-    def apply(hiragana: String, katakana: String, romaji: String):LeKana = this match {
-      case Hiragana(hiragana, katakana, romaji) => new Hiragana(hiragana, katakana, romaji)
-      case Katakana(hiragana, katakana, romaji) => new Katakana(hiragana, katakana, romaji)
-      case Romaji(hiragana, katakana, romaji) => new Romaji(hiragana, katakana, romaji)
-    }
-  */
   def extendVowelAndConsonant(s: String = this.toString) = extendVowel(extendConsonant(s))
 
   def ==(that: String) = this.toString == that
