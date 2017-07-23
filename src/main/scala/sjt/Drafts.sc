@@ -5,14 +5,15 @@ import sjt.JapaneseInstances._
 import collection.JavaConverters._
 import scala.annotation.tailrec
 
-sjt.LeKana.allKana
-sjt.LeKana.everyKanaSyllable
+sjt.Kana.allKana
+sjt.Kana.everyKanaSyllable
 val cachedTokenizer = new Tokenizer()
 
 import JapaneseInstances._
 import JapaneseSyntax._
 
-
+Kana.isTranslateableSymbol("。")
+Kana.translateableSymbolsStr
 def printDebug(s: String): Unit = {
   //println("---------------------------")
   println(s"$s Original: $s, romaji: " + s.toRomaji() + " hiragana: " + s.toHiragana() + ", katakana: " +s.toKatakana()+ ", syllables: " + s.splitIntoSyllables)
@@ -20,17 +21,6 @@ def printDebug(s: String): Unit = {
   println(s"$s to Hiragana: " + s.toHiragana())
   println(s"$s syllables: " + s.splitIntoSyllables)
   println(s"$s syllables k: " + s.toKatakana().splitIntoSyllables)
-  println(s"$s starts with consonant: " + Syllable.sWC(s))
-  println(s"$s starts with i-consonant: " + Syllable.sWIC(s))
-  println(s"$s starts With small Y: " + Syllable.sWSmallY(s))
-  println(s"$s starts With Yoon: " +Syllable.swYoon(s))
-  println(s"$s starts With Yoon + extended vowel: " + Syllable.swEVYoon(s))
-  println(s"$s starts With extended consonant + Yoon: " + Syllable.swECYoon(s))
-  println(s"$s starts With extended consonant + Yoon + vowel: " + Syllable.swECYoonEV(s))
-  println(s"$s starts With extended consonant: " + Syllable.swEC(s))
-  println(s"$s starts With extended i-consonant: " + Syllable.swEIC(s))
-  println(s"$s starts With extended vowel: " + Syllable.swEV(s))
-  println(s"$s starts With extended consonant + vowel: " + Syllable.swECEV(s))
   println
 
 }
