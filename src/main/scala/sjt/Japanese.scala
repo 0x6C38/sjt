@@ -176,5 +176,6 @@ object Main {
     import JapaneseInstances._
     import JapaneseSyntax._
     //println("日本語はいいですgrvg32432g!#!%$#%=)".extractKanji)
+    println("".contains('c'))
   }
 }
