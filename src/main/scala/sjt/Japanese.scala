@@ -19,6 +19,7 @@ trait Japanese[A] {
   def containsKatakana(value: A): Boolean
   def containsKana(value: A): Boolean = containsHiragana(value) || containsKatakana(value)
   def containsKanji(value: A): Boolean
+  def extractKanji(value: A):List[Char]
   def containsJapanese(value: A): Boolean = containsHiragana(value) || containsKatakana(value)
   def isLatin(value: A): Boolean
   def toRomaji(value: A, tokenizer:Option[Tokenizer] = None): String
@@ -34,9 +35,10 @@ object JapaneseInstances{
     def isHalfWidthKatakana(value: Char):Boolean = ('\uff66' <= value) && (value <= '\uff9d')
     def isFullWidthKatakana(value: Char):Boolean = ('\u30a1' <= value) && (value <= '\u30fe')
     def isKanji(value: Char): Boolean = (('\u4e00' <= value) && (value <= '\u9fa5')) || (('\u3005' <= value) && (value <= '\u3007'))
+    def extractKanji(value:Char):List[Char] = if (isKanji(value)) List[Char](value) else Nil
     def containsHiragana(value: Char): Boolean = isHiragana(value)
     def containsKatakana(value: Char): Boolean = isKatakana(value)
-    def containsKanji(value: Char): Boolean = isKanji(value)
+    def containsKanji(value: Char): Boolean = isKanji(value) //replace for a call to extract kanji?
     def isLatin(value: Char): Boolean = Charset.forName("US-ASCII").newEncoder().canEncode(value)
 
     def isVowel(value:Char):Boolean = isLatinVowel(value) || isHiraganaVowel(value) || isKatakanaVowel(value) || isKatakanaMiniVowel(value)
@@ -61,6 +63,8 @@ object JapaneseInstances{
     def isHalfWidthKatakana(value: String):Boolean = value.toCharArray.forall(japaneseChar.isHalfWidthKatakana)
     def isFullWidthKatakana(value: String):Boolean = value.toCharArray.forall(japaneseChar.isFullWidthKatakana)
     def isKanji(value: String): Boolean = value.toCharArray.forall(japaneseChar.isKanji)
+    def extractKanji(value:String):List[Char] = value.toCharArray.filter(c => japaneseChar.isKanji(c)).toList
+
     def containsHiragana(value: String): Boolean = value.toCharArray.exists(japaneseChar.containsHiragana)
     def containsKatakana(value: String): Boolean = value.toCharArray.exists(japaneseChar.containsKatakana)
     def containsKanji(value: String): Boolean = value.toCharArray.exists(japaneseChar.containsKanji)
@@ -100,6 +104,8 @@ object JapaneseInstances{
     def isHalfWidthKatakana(value: Token):Boolean = japaneseString.isHalfWidthKatakana(value.getSurface)
     def isFullWidthKatakana(value: Token):Boolean = japaneseString.isFullWidthKatakana(value.getSurface)
     def isKanji(value: Token): Boolean = japaneseString.isKanji(value.getSurface)
+    def extractKanji(value:Token):List[Char] = japaneseString.extractKanji(value.getSurface)
+
     def containsHiragana(value: Token): Boolean = japaneseString.containsHiragana(value.getSurface)
     def containsKatakana(value: Token): Boolean = japaneseString.containsKatakana(value.getSurface)
     def containsKanji(value: Token): Boolean = japaneseString.containsKanji(value.getSurface)
@@ -118,6 +124,8 @@ object Japanese {
   def isKatakana[A](input: A)(implicit p: Japanese[A]): Boolean  = p.isKatakana(input)
   def isKana[A](input: A)(implicit p: Japanese[A]): Boolean = p.isKana(input)
   def isKanji[A](input: A)(implicit p: Japanese[A]): Boolean = p.isKanji(input)
+  def extractKanji[A](input: A)(implicit p: Japanese[A]): List[Char] = p.extractKanji(input)
+
   def containsHiragana[A](input: A)(implicit p: Japanese[A]): Boolean = p.containsHiragana(input)
   def containsKatakana[A](input: A)(implicit p: Japanese[A]): Boolean = p.containsKatakana(input)
   def containsKana[A](input: A)(implicit p: Japanese[A]): Boolean = p.containsKana(input)
@@ -138,6 +146,7 @@ object JapaneseSyntax {
     def isKatakana(implicit p: Japanese[A]): Boolean  = p.isKatakana(value)
     def isKana(implicit p: Japanese[A]): Boolean = p.isKana(value)
     def isKanji(implicit p: Japanese[A]): Boolean = p.isKanji(value)
+    def extractKanji(implicit p: Japanese[A]): List[Char] = p.extractKanji(value)
     def containsHiragana(implicit p: Japanese[A]): Boolean = p.containsHiragana(value)
     def containsKatakana(implicit p: Japanese[A]): Boolean = p.containsKatakana(value)
     def containsKana(implicit p: Japanese[A]): Boolean = p.containsKana(value)
@@ -166,6 +175,6 @@ object Main {
   def main(args: Array[String]): Unit = {
     import JapaneseInstances._
     import JapaneseSyntax._
+    //println("日本語はいいですgrvg32432g!#!%$#%=)".extractKanji)
   }
-
 }
