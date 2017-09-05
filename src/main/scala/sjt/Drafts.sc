@@ -79,4 +79,14 @@ val t6 = System.currentTimeMillis()
 val deltaT3 = t6-t5
 println(s"Δt = $deltaT3 ~ 479 chars. 100k chars ~ 3.5 seconds")
 
-//---TODO: Publish
+
+val sample = "日本はチョョすごいい本当"
+sample.extractHiragana
+sample.extractKatakana
+sample.extractKana
+sample.extractKanji
+
+sample.extractUniqueHiragana
+sample.extractUniqueKatakana
+sample.extractUniqueKana
+sample.extractUniqueKanji

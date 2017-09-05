@@ -19,7 +19,17 @@ trait Japanese[A] {
   def containsKatakana(value: A): Boolean
   def containsKana(value: A): Boolean = containsHiragana(value) || containsKatakana(value)
   def containsKanji(value: A): Boolean
-  def extractKanji(value: A):List[Char]
+
+  def extractHiragana(value:A):String
+  def extractKatakana(value:A):String
+  def extractKana(value:A):String = extractHiragana(value) ++ extractKatakana(value)
+  def extractKanji(value:A):String
+
+  def extractUniqueHiragana(value:A):Set[Char]
+  def extractUniqueKatakana(value:A):Set[Char]
+  def extractUniqueKana(value:A):Set[Char] = extractUniqueHiragana(value) union extractUniqueKatakana(value)
+  def extractUniqueKanji(value: A):Set[Char]
+
   def containsJapanese(value: A): Boolean = containsHiragana(value) || containsKatakana(value)
   def isLatin(value: A): Boolean
   def toRomaji(value: A, tokenizer:Option[Tokenizer] = None): String
@@ -31,16 +41,14 @@ trait Japanese[A] {
 object JapaneseInstances{
 
   implicit val japaneseChar = new Japanese[Char] {
-    def isHiragana(value: Char): Boolean = ('\u3041' <= value) && (value <= '\u309e') || isExtension(value)
+    def isHiragana(value: Char): Boolean = ('\u3041' <= value) && (value <= '\u309e') || isHiraganaExtension(value)
     def isHalfWidthKatakana(value: Char):Boolean = ('\uff66' <= value) && (value <= '\uff9d')
     def isFullWidthKatakana(value: Char):Boolean = ('\u30a1' <= value) && (value <= '\u30fe')
     def isKanji(value: Char): Boolean = (('\u4e00' <= value) && (value <= '\u9fa5')) || (('\u3005' <= value) && (value <= '\u3007'))
-    def extractKanji(value:Char):List[Char] = if (isKanji(value)) List[Char](value) else Nil
     def containsHiragana(value: Char): Boolean = isHiragana(value)
     def containsKatakana(value: Char): Boolean = isKatakana(value)
     def containsKanji(value: Char): Boolean = isKanji(value) //replace for a call to extract kanji?
     def isLatin(value: Char): Boolean = Charset.forName("US-ASCII").newEncoder().canEncode(value)
-
     def isVowel(value:Char):Boolean = isLatinVowel(value) || isHiraganaVowel(value) || isKatakanaVowel(value) || isKatakanaMiniVowel(value)
     def isLatinVowel(value:Char):Boolean = value == 'a' ||value == 'e' ||value == 'i' || value == 'o' || value == 'u'
     def isHiraganaVowel(value:Char):Boolean = value == 'あ' ||value == 'え' ||value == 'い' || value == 'お' || value == 'う'
@@ -48,13 +56,23 @@ object JapaneseInstances{
     def isKatakanaMiniVowel(value:Char):Boolean = value == 'ェ' || value == 'ョ'
 
     def extendChar(value:Char):Char = Map('a' -> 'ā', 'e' -> 'ē', 'i' -> 'ī', 'o'-> 'ō', 'u' -> 'ū').get(value).getOrElse(value)
-    def isExtension(value:Char):Boolean = Map('ゃ' -> 'a', 'ゅ'->'u', 'ょ'->'o', 'ャ' -> 'a', 'ュ' -> 'u', 'ョ' -> 'o').get(value).isDefined
+    def isHiraganaExtension(value:Char):Boolean = Map('ゃ' -> 'a', 'ゅ'->'u', 'ょ'->'o').get(value).isDefined
+    def isKatakanaExtension(value:Char):Boolean = Map('ャ' -> 'a', 'ュ' -> 'u', 'ョ' -> 'o').get(value).isDefined
+    def isExtension(value:Char):Boolean = isHiraganaExtension(value) || isKatakanaExtension(value)
 
     override def toRomaji(value: Char, tokenizer:Option[Tokenizer] = None): String = Kana.toRomaji(splitIntoSyllables(value))
     override def toKatakana(value: Char, tokenizer:Option[Tokenizer] = None): String = if (value == 'っ') "ッ" else Kana.toKatakana(splitIntoSyllables(value))
     override def toHiragana(value: Char, tokenizer:Option[Tokenizer] = None): String = if (value == 'ッ') "っ" else Kana.toHiragana(splitIntoSyllables(value))
 
     override def splitIntoSyllables(input: Char, l: List[(Kana, String)]): List[(Kana, String)] =  List(Kana.nextSyllable(input.toString))
+
+    override def extractHiragana(value: Char):String = if (isHiragana(value)) value.toString else ""
+    override def extractKatakana(value: Char):String = if (isKatakana(value)) value.toString else ""
+    override def extractKanji(value: Char):String = if (isKanji(value)) value.toString else ""
+
+    override def extractUniqueHiragana(value: Char):Set[Char] = if (isHiragana(value)) Set[Char](value) else Set.empty
+    override def extractUniqueKatakana(value: Char):Set[Char] = if (isKatakana(value)) Set[Char](value) else Set.empty
+    override def extractUniqueKanji(value:Char):Set[Char] = if (isKanji(value)) Set[Char](value) else Set.empty
   }
 
   implicit val japaneseString = new Japanese[String] {
@@ -63,7 +81,6 @@ object JapaneseInstances{
     def isHalfWidthKatakana(value: String):Boolean = value.toCharArray.forall(japaneseChar.isHalfWidthKatakana)
     def isFullWidthKatakana(value: String):Boolean = value.toCharArray.forall(japaneseChar.isFullWidthKatakana)
     def isKanji(value: String): Boolean = value.toCharArray.forall(japaneseChar.isKanji)
-    def extractKanji(value:String):List[Char] = value.toCharArray.filter(c => japaneseChar.isKanji(c)).toList
 
     def containsHiragana(value: String): Boolean = value.toCharArray.exists(japaneseChar.containsHiragana)
     def containsKatakana(value: String): Boolean = value.toCharArray.exists(japaneseChar.containsKatakana)
@@ -98,13 +115,19 @@ object JapaneseInstances{
     private def tokensToHiraganaString(ts:List[Token]) = ts.foldLeft(""){(r,t:Token) => r + hiraganaSpacing(t) +  t.getReading}.trim
     private def tokensToKatakanaString(ts:List[Token]) = ts.foldLeft(""){(r,t:Token) => r + katakanaSpacing(t) +  (if (t.getPronunciation != "*") t.getPronunciation else t.getReading)}.trim
 
+    override def extractHiragana(value: String) = value.toCharArray.filter(c => japaneseChar.isHiragana(c)).foldLeft("")(_.toString + _.toString)
+    override def extractKatakana(value: String) = value.toCharArray.filter(c => japaneseChar.isKatakana(c)).foldLeft("")(_.toString + _.toString)
+    override def extractKanji(value: String) = value.toCharArray.filter(c => japaneseChar.isKanji(c)).foldLeft("")(_.toString + _.toString)
+
+    override def extractUniqueHiragana(value: String) = value.toCharArray.filter(c => japaneseChar.isHiragana(c)).toSet
+    override def extractUniqueKatakana(value: String) = value.toCharArray.filter(c => japaneseChar.isKatakana(c)).toSet
+    override def extractUniqueKanji(value:String):Set[Char] = value.toCharArray.filter(c => japaneseChar.isKanji(c)).toSet
   }
   implicit val kuromojiToken = new Japanese[Token] {
     def isHiragana(value: Token): Boolean = japaneseString.isHiragana(value.getSurface)
     def isHalfWidthKatakana(value: Token):Boolean = japaneseString.isHalfWidthKatakana(value.getSurface)
     def isFullWidthKatakana(value: Token):Boolean = japaneseString.isFullWidthKatakana(value.getSurface)
     def isKanji(value: Token): Boolean = japaneseString.isKanji(value.getSurface)
-    def extractKanji(value:Token):List[Char] = japaneseString.extractKanji(value.getSurface)
 
     def containsHiragana(value: Token): Boolean = japaneseString.containsHiragana(value.getSurface)
     def containsKatakana(value: Token): Boolean = japaneseString.containsKatakana(value.getSurface)
@@ -115,6 +138,14 @@ object JapaneseInstances{
     def toHiragana(value: Token, tokenizer:Option[Tokenizer] = None): String = Kana.toHiragana(splitIntoSyllables(value))
 
     override def splitIntoSyllables(input: Token, l: List[(Kana, String)]): List[(Kana, String)] = japaneseString.splitIntoSyllables(if (input.getPronunciation != "*") input.getPronunciation else input.getSurface)
+
+    override def extractHiragana(value: Token) = japaneseString.extractHiragana(value.getSurface)
+    override def extractKatakana(value: Token) = japaneseString.extractKatakana(value.getSurface)
+    override def extractKanji(value: Token) = japaneseString.extractKanji(value.getSurface)
+
+    override def extractUniqueHiragana(value: Token) = japaneseString.extractUniqueHiragana(value.getSurface)
+    override def extractUniqueKatakana(value: Token) = japaneseString.extractUniqueKatakana(value.getSurface)
+    override def extractUniqueKanji(value:Token):Set[Char] = japaneseString.extractUniqueKanji(value.getSurface)
   }
 }
 object Japanese {
@@ -124,7 +155,14 @@ object Japanese {
   def isKatakana[A](input: A)(implicit p: Japanese[A]): Boolean  = p.isKatakana(input)
   def isKana[A](input: A)(implicit p: Japanese[A]): Boolean = p.isKana(input)
   def isKanji[A](input: A)(implicit p: Japanese[A]): Boolean = p.isKanji(input)
-  def extractKanji[A](input: A)(implicit p: Japanese[A]): List[Char] = p.extractKanji(input)
+
+  def extractHiragana[A](input:A)(implicit p: Japanese[A]):String = p.extractHiragana(input)
+  def extractKatakana[A](input:A)(implicit p: Japanese[A]):String = p.extractKatakana(input)
+  def extractKanji[A](input:A)(implicit p: Japanese[A]):String = p.extractKanji(input)
+
+  def extractUniqueHiragana[A](input:A)(implicit p: Japanese[A]):Set[Char] = p.extractUniqueHiragana(input)
+  def extractUniqueKatakana[A](input:A)(implicit p: Japanese[A]):Set[Char] = p.extractUniqueKatakana(input)
+  def extractUniqueKanji[A](input: A)(implicit p: Japanese[A]): Set[Char] = p.extractUniqueKanji(input)
 
   def containsHiragana[A](input: A)(implicit p: Japanese[A]): Boolean = p.containsHiragana(input)
   def containsKatakana[A](input: A)(implicit p: Japanese[A]): Boolean = p.containsKatakana(input)
@@ -146,7 +184,17 @@ object JapaneseSyntax {
     def isKatakana(implicit p: Japanese[A]): Boolean  = p.isKatakana(value)
     def isKana(implicit p: Japanese[A]): Boolean = p.isKana(value)
     def isKanji(implicit p: Japanese[A]): Boolean = p.isKanji(value)
-    def extractKanji(implicit p: Japanese[A]): List[Char] = p.extractKanji(value)
+
+    def extractHiragana(implicit p: Japanese[A]): String = p.extractHiragana(value)
+    def extractKatakana(implicit p: Japanese[A]): String = p.extractKatakana(value)
+    def extractKana(implicit p: Japanese[A]): String = p.extractKana(value)
+    def extractKanji(implicit p: Japanese[A]): String = p.extractKanji(value)
+
+    def extractUniqueHiragana(implicit p: Japanese[A]): Set[Char] = p.extractUniqueHiragana(value)
+    def extractUniqueKatakana(implicit p: Japanese[A]): Set[Char] = p.extractUniqueKatakana(value)
+    def extractUniqueKana(implicit p: Japanese[A]): Set[Char] = p.extractUniqueKana(value)
+    def extractUniqueKanji(implicit p: Japanese[A]): Set[Char] = p.extractUniqueKanji(value)
+
     def containsHiragana(implicit p: Japanese[A]): Boolean = p.containsHiragana(value)
     def containsKatakana(implicit p: Japanese[A]): Boolean = p.containsKatakana(value)
     def containsKana(implicit p: Japanese[A]): Boolean = p.containsKana(value)
@@ -178,12 +226,21 @@ object Main {
     //TODO: Refactor the Hiragan/Katankana/Romaji clases to simply be Kana
     //TODO: Make function to get all kana transliterations at the same time & implement all transliterations in terms of that
     //TODO: Rename Kana fields and privitize them if necessary
-    //TODO: Add extractHiragana + extractKatakana + extractKana methods to SJT
     //TODO: Add extractKanjiReading (?)
+    //TODO: Command line interaction
+
+    val sample = "日本はチョョすごいい本当"
+    println(sample.extractHiragana)
+    println(sample.extractKatakana)
+    println(sample.extractKana)
+    println(sample.extractKanji)
+
+    println(sample.extractUniqueHiragana)
+    println(sample.extractUniqueKatakana)
+    println(sample.extractUniqueKana)
+    println(sample.extractUniqueKanji)
 
 /*
-
-
     val t1 = System.currentTimeMillis()
     val a = Kana.diacritics
     val b = Kana.yoonNonDiacritics

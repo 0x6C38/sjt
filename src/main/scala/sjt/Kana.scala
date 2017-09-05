@@ -20,7 +20,6 @@ sealed trait Kana {
 }
 
 object Kana {
-
   import Kana._
   lazy val tokenizer:Tokenizer = new Tokenizer()
 
@@ -133,7 +132,7 @@ object Kana {
     (NotKana(noValue,noValue,noValue), noValue)
   }
 
-  def transliterate(k: (Kana, String), f: Kana => Kana):String ={
+  def transliterate(k: (Kana, String), f: Kana => Kana):String = {
     if (k._1.toHi == k._2 || k._1.toKa == k._2 || k._1.toRo == k._2) f(k._1).toString
     else if (k._1.toHi.extendVowel() == k._2 || k._1.toKa.extendVowel() == k._2 || k._1.toRo.extendVowel() == k._2) f(k._1).extendVowel()
     else if (k._1.toHi.extendConsonant() == k._2 || k._1.toKa.extendConsonant() == k._2 || k._1.toRo.extendConsonant() == k._2) f(k._1).extendConsonant()
