@@ -77,15 +77,15 @@ object JapaneseInstances{
       else splitIntoSyllables(input.drop(nS._2.length), nS :: l)
     }
 
-    def toRomaji(value: String, tokenizer:Option[Tokenizer] = Some(new Tokenizer())):String = {
+    def toRomaji(value: String, tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):String = {
       if (!containsKanji(value)) Kana.toRomaji(splitIntoSyllables(value))
       else Kana.toRomaji(splitIntoSyllables(tokensToRomajiString(tokenizer.get.tokenize(value).asScala.toList)))
     }
-    def toHiragana(value: String, tokenizer:Option[Tokenizer] = Some(new Tokenizer())):String = {
+    def toHiragana(value: String, tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):String = {
       if (!containsKanji(value)) Kana.toHiragana(splitIntoSyllables(value))
       else Kana.toHiragana(splitIntoSyllables(tokensToHiraganaString(tokenizer.get.tokenize(value).asScala.toList)))
     }
-    def toKatakana(value: String, tokenizer:Option[Tokenizer] = Some(new Tokenizer())):String = {
+    def toKatakana(value: String, tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):String = {
       if (!containsKanji(value)) Kana.toKatakana(splitIntoSyllables(value))
       else Kana.toKatakana(splitIntoSyllables(tokensToKatakanaString(tokenizer.get.tokenize(value).asScala.toList))).tail
     }
@@ -175,7 +175,58 @@ object Main {
   def main(args: Array[String]): Unit = {
     import JapaneseInstances._
     import JapaneseSyntax._
-    //println("日本語はいいですgrvg32432g!#!%$#%=)".extractKanji)
-    println("".contains('c'))
+    //TODO: Refactor the Hiragan/Katankana/Romaji clases to simply be Kana
+    //TODO: Make function to get all kana transliterations at the same time & implement all transliterations in terms of that
+    //TODO: Rename Kana fields and privitize them if necessary
+    //TODO: Add extractHiragana + extractKatakana + extractKana methods to SJT
+    //TODO: Add extractKanjiReading (?)
+
+/*
+
+
+    val t1 = System.currentTimeMillis()
+    val a = Kana.diacritics
+    val b = Kana.yoonNonDiacritics
+    val leTO1 = Kana.tokenizer
+    val t2 = System.currentTimeMillis()
+    val deltaT = t2-t1
+    println(s"Δt = $deltaT")
+
+    val t3 = System.currentTimeMillis()
+    val leTO2 = Kana.tokenizer
+    val t4 = System.currentTimeMillis()
+    val deltaT2 = t4-t3
+    println(s"Δt = $deltaT2")
+
+
+    val t5 = System.currentTimeMillis()
+    println("毎日私は午前十時に起きます。十時から十二まで勉強します。午後一時に昼ごはんを食べます。あとでまた勉強をします。六時に地下鉄で大学へ行きます。十一時に私の家へ帰ります。そして晩ご飯を食べます。次に少し仕事をします。プログラミンをします。難しいです。それでも、私は大好きです。なぜならとても楽しいですから。朝の五時にねます。".toRomaji())
+    println("診察行ってきました。最終目標は心臓移植というのは変わらないそうで、自分の心臓じゃ生きられないみたいです。お金もかかるし、手術するのも入院するのももう嫌だな～…なんてことを考えながらvitaで朧村正をプレイしてました！　牛鬼と馬鬼ってボスより強くない！？　ぜんぜん勝てないんだけど…".toRomaji())
+    println("「いま」起きていることを見つけよう。国内のニュースから身近なできごとまで、みんなの話題がわかる「いま」起きていることを見つけよう。国内のニュースから身近なできごとまで、みんなの話題がわかる".toRomaji())
+    println("皆さんは日本の四つの大きな島の名前を知っていますか。日本には東京のような、世界によく知られている都市がたくさんありますが、皆さんはどんな都市名前を聞きたことがありますか。".toRomaji())
+    val t6 = System.currentTimeMillis()
+    val deltaT3 = t6-t5
+    println(s"Δt = $deltaT3")
+
+
+    val t7 = System.currentTimeMillis()
+    println("毎日私は午前十時に起きます。十時から十二まで勉強します。午後一時に昼ごはんを食べます。あとでまた勉強をします。六時に地下鉄で大学へ行きます。十一時に私の家へ帰ります。そして晩ご飯を食べます。次に少し仕事をします。プログラミンをします。難しいです。それでも、私は大好きです。なぜならとても楽しいですから。朝の五時にねます。".toRomaji())
+    println("診察行ってきました。最終目標は心臓移植というのは変わらないそうで、自分の心臓じゃ生きられないみたいです。お金もかかるし、手術するのも入院するのももう嫌だな～…なんてことを考えながらvitaで朧村正をプレイしてました！　牛鬼と馬鬼ってボスより強くない！？　ぜんぜん勝てないんだけど…".toRomaji())
+    println("「いま」起きていることを見つけよう。国内のニュースから身近なできごとまで、みんなの話題がわかる「いま」起きていることを見つけよう。国内のニュースから身近なできごとまで、みんなの話題がわかる".toRomaji())
+    println("皆さんは日本の四つの大きな島の名前を知っていますか。日本には東京のような、世界によく知られている都市がたくさんありますが、皆さんはどんな都市名前を聞きたことがありますか。".toRomaji())
+    val t8 = System.currentTimeMillis()
+    val deltaT4 = t8-t7
+    println(s"Δt = $deltaT4")
+
+    val t9 = System.currentTimeMillis()
+    println("毎日私は午前十時に起きます。十時から十二まで勉強します。午後一時に昼ごはんを食べます。あとでまた勉強をします。六時に地下鉄で大学へ行きます。十一時に私の家へ帰ります。そして晩ご飯を食べます。次に少し仕事をします。プログラミンをします。難しいです。それでも、私は大好きです。なぜならとても楽しいですから。朝の五時にねます。".toRomaji(leTO1))
+    println("診察行ってきました。最終目標は心臓移植というのは変わらないそうで、自分の心臓じゃ生きられないみたいです。お金もかかるし、手術するのも入院するのももう嫌だな～…なんてことを考えながらvitaで朧村正をプレイしてました！　牛鬼と馬鬼ってボスより強くない！？　ぜんぜん勝てないんだけど…".toRomaji(leTO1))
+    println("「いま」起きていることを見つけよう。国内のニュースから身近なできごとまで、みんなの話題がわかる「いま」起きていることを見つけよう。国内のニュースから身近なできごとまで、みんなの話題がわかる".toRomaji(leTO1))
+    println("皆さんは日本の四つの大きな島の名前を知っていますか。日本には東京のような、世界によく知られている都市がたくさんありますが、皆さんはどんな都市名前を聞きたことがありますか。".toRomaji(leTO1))
+    val t10 = System.currentTimeMillis()
+    val deltaT5 = t10-t9
+    println(s"Δt = $deltaT5")
+*/
+
   }
 }

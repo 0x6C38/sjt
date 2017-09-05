@@ -2,6 +2,7 @@ package sjt
 
 import JapaneseInstances._
 import JapaneseSyntax._
+import com.atilika.kuromoji.ipadic.Tokenizer
 
 sealed trait Kana {
   def toHi: Kana
@@ -21,6 +22,7 @@ sealed trait Kana {
 object Kana {
 
   import Kana._
+  lazy val tokenizer:Tokenizer = new Tokenizer()
 
   val nonDiacritics = Set[Kana](Hiragana("あ", "ア", "a"), Hiragana("か", "カ", "ka"), Hiragana("さ", "サ", "sa"), Hiragana("た", "タ", "ta"), Hiragana("な", "ナ", "na"), Hiragana("は", "ハ", "ha"), Hiragana("ま", "マ", "ma"), Hiragana("や", "ヤ", "ya"), Hiragana("ら", "ラ", "ra"), Hiragana("わ", "ワ", "wa")
     , Hiragana("い", "イ", "i"), Hiragana("き", "キ", "ki"), Hiragana("し", "シ", "shi"), Hiragana("ち", "チ", "chi"), Hiragana("に", "ニ", "ni"), Hiragana("ひ", "ヒ", "hi"), Hiragana("み", "ミ", "mi"), Hiragana("り", "リ", "ri")
