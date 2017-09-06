@@ -3,16 +3,11 @@ package sjt
 import JapaneseInstances._
 import JapaneseSyntax._
 import com.atilika.kuromoji.ipadic.Tokenizer
-
+case class Transliteration(original:String, kana:Kana)
 case class Kana(hiragana:String, katakana:String, romaji:String){
-  /*
-  def toHi: String
-  def toKa: String
-  def toRo: String
-*/
+
   def extendVowel(s: String = this.toString): Kana = Kana(extendVowelHiragana(hiragana), extendVowelKatakana(katakana), extendVowelRomaji(romaji))
   def extendConsonant(s: String = this.toString): Kana = Kana(extendConsonantHiragana(hiragana), extendConsonantKatakana(katakana), extendConsonantRomaji(romaji))
-  //def extendVowelAndConsonant(s: String = this.toString):Kana = Kana(extendVowel(extendConsonant(s).extendVowel().hiragana, extendVowel(extendConsonant(s).katakana).katakana, extendVowel(extendConsonant(s).romaji).romaji)
   def extendVowelAndConsonant(s: String = this.toString):Kana = Kana(extendConsonant(s).extendVowel().hiragana, extendConsonant(s).extendVowel().katakana, extendConsonant(s).extendVowel().romaji)
 
   def ==(that: String) = this.toString == that
@@ -77,11 +72,6 @@ object Kana {
   def isTranslateableSymbol(s:String) = translateableSymbolsStr.contains(s)
 
   val allKana: Set[Kana] = kana ++ yoon
-  /*
-  val allHiragana: Set[Kana] = allKana.map(_.toHi)
-  val allKatakana: Set[Kana] = allKana.map(_.toKa)
-  val allRomaji: Set[Kana] = allKana.map(_.toRo)
-*/
   val allKanaStr: Set[String] = allKana.map(_.toString)
   val allHiraganaStr: Set[String] = allKana.map(_.hiragana)
   val allKatakanaStr: Set[String] = allKana.map(_.katakana)
@@ -153,47 +143,3 @@ object Kana {
   def toKatakana(ks:List[(Kana, String)]):String = ks.reverse.foldLeft("")((k, v) => k + transliterate(v, l => l.katakana))
 
 }
-/*
-case class Hiragana(val hiragana: String, val katakana: String, val romaji: String) extends Kana {
-  override def extendVowel(s: String = this.hiragana): String = s + "う"
-  override def extendConsonant(s: String = this.hiragana): String = "っ" + s
-
-  override def toString = hiragana
-
-  override def toHi: Hiragana = this
-  override def toKa: Katakana = Katakana(hiragana, katakana, romaji)
-  override def toRo: Romaji = Romaji(hiragana, katakana, romaji)
-
-}
-
-case class Katakana(val hiragana: String, val katakana: String, val romaji: String) extends Kana {
-  override def extendVowel(s: String = this.katakana): String = s + "ー"
-  override def extendConsonant(s: String = this.katakana): String = "ッ" + s
-
-  override def toString = katakana
-
-  override def toHi: Hiragana = Hiragana(hiragana, katakana, romaji)
-  override def toKa: Katakana = this
-  override def toRo: Romaji = Romaji(hiragana, katakana, romaji)
-}
-
-case class Romaji(val hiragana: String, val katakana: String, val romaji: String) extends Kana {
-  override def extendVowel(s: String = this.romaji): String = s.init + Map('a' -> 'ā', 'e' -> 'ē', 'i' -> 'ī', 'o' -> 'ō', 'u' -> 'ū').getOrElse(s.last, s.last)
-  override def extendConsonant(s: String = this.romaji): String = if (!japaneseChar.isVowel(s.head)) s.head + s else s
-
-  override def toString = romaji
-
-  override def toHi: Hiragana = Hiragana(hiragana, katakana, romaji)
-  override def toKa: Katakana = Katakana(hiragana, katakana, romaji)
-  override def toRo: Romaji = this
-}
-
-case class NotKana(val hiragana:String, val katakana:String, val romaji: String) extends Kana{
-  override def toHi = this
-  override def toKa = this
-  override def toRo = this
-
-  override def extendVowel(s: String): String = hiragana
-  override def extendConsonant(s: String): String = hiragana
-}
-*/
