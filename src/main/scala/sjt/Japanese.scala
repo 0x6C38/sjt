@@ -106,7 +106,17 @@ object JapaneseInstances{
       if (!containsKanji(value)) Kana.toKatakana(splitIntoSyllables(value))
       else Kana.toKatakana(splitIntoSyllables(tokensToKatakanaString(tokenizer.get.tokenize(value).asScala.toList))).tail
     }
-
+    /*
+    def toAll(value: String, tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):(String,String,String) = {
+      if (!containsKanji(value)) (Kana.toRomaji(splitIntoSyllables(value)), Kana.toHiragana(splitIntoSyllables(value)), Kana.toKatakana(splitIntoSyllables(value)))
+      else {
+        val tokens = tokenizer.get.tokenize(value).asScala.toList
+        (Kana.toRomaji(splitIntoSyllables(tokensToKatakanaString(tokens))).tail,
+         Kana.toHiragana(splitIntoSyllables(tokensToKatakanaString(tokens))).tail,
+         Kana.toKatakana(splitIntoSyllables(tokensToKatakanaString(tokens))).tail)
+      }
+    }
+    */
     private def hiraganaSpacing(t:Token) = ""
     private def katakanaSpacing(t:Token) = if(Kana.isTranslateableSymbol(t.getSurface())) "" else "・"
     private def romajiSpacing(t:Token) = if(t.getAllFeaturesArray()(1) == "接続助詞" || Kana.isTranslateableSymbol(t.getSurface())) "" else " "
@@ -139,12 +149,12 @@ object JapaneseInstances{
 
     override def splitIntoSyllables(input: Token, l: List[(Kana, String)]): List[(Kana, String)] = japaneseString.splitIntoSyllables(if (input.getPronunciation != "*") input.getPronunciation else input.getSurface)
 
-    override def extractHiragana(value: Token) = japaneseString.extractHiragana(value.getSurface)
-    override def extractKatakana(value: Token) = japaneseString.extractKatakana(value.getSurface)
-    override def extractKanji(value: Token) = japaneseString.extractKanji(value.getSurface)
+    override def extractHiragana(value: Token):String = japaneseString.extractHiragana(value.getSurface)
+    override def extractKatakana(value: Token):String = japaneseString.extractKatakana(value.getSurface)
+    override def extractKanji(value: Token):String = japaneseString.extractKanji(value.getSurface)
 
-    override def extractUniqueHiragana(value: Token) = japaneseString.extractUniqueHiragana(value.getSurface)
-    override def extractUniqueKatakana(value: Token) = japaneseString.extractUniqueKatakana(value.getSurface)
+    override def extractUniqueHiragana(value: Token):Set[Char] = japaneseString.extractUniqueHiragana(value.getSurface)
+    override def extractUniqueKatakana(value: Token):Set[Char] = japaneseString.extractUniqueKatakana(value.getSurface)
     override def extractUniqueKanji(value:Token):Set[Char] = japaneseString.extractUniqueKanji(value.getSurface)
   }
 }
@@ -223,11 +233,26 @@ object Main {
   def main(args: Array[String]): Unit = {
     import JapaneseInstances._
     import JapaneseSyntax._
-    //TODO: Refactor the Hiragan/Katankana/Romaji clases to simply be Kana
+    //TODO: Add type alias Transliteration (?)
     //TODO: Make function to get all kana transliterations at the same time & implement all transliterations in terms of that
+    //TODO: Add okurigana function (checkout drafts worksheet)
     //TODO: Rename Kana fields and privitize them if necessary
-    //TODO: Add extractKanjiReading (?)
     //TODO: Command line interaction
+
+
+    println(Kana.allHiraganaEC)
+    println(Kana.allHiraganaEV)
+    println(Kana.allHiraganaECEV)
+    val k = Kana("と", "ト", "to")
+    val kEV = k.extendVowel()
+    val kEC = k.extendConsonant()
+    println(s"kEV: $kEV")
+    println(s"kEC: $kEC")
+    println(k.extendVowelAndConsonant()) //error converting both
+    println(kEV.extendVowelAndConsonant()) //error converting both
+    println(kEC.extendVowelAndConsonant()) //error converting both
+
+    println("------------------")
 
     val sample = "日本はチョョすごいい本当"
     println(sample.extractHiragana)
@@ -240,7 +265,7 @@ object Main {
     println(sample.extractUniqueKana)
     println(sample.extractUniqueKanji)
 
-/*
+
     val t1 = System.currentTimeMillis()
     val a = Kana.diacritics
     val b = Kana.yoonNonDiacritics
@@ -282,7 +307,7 @@ object Main {
     println("皆さんは日本の四つの大きな島の名前を知っていますか。日本には東京のような、世界によく知られている都市がたくさんありますが、皆さんはどんな都市名前を聞きたことがありますか。".toRomaji(leTO1))
     val t10 = System.currentTimeMillis()
     val deltaT5 = t10-t9
-    println(s"Δt = $deltaT5")
+    println(s"Δt = $deltaT5")/*
 */
 
   }

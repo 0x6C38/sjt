@@ -4,18 +4,27 @@ import JapaneseInstances._
 import JapaneseSyntax._
 import com.atilika.kuromoji.ipadic.Tokenizer
 
-sealed trait Kana {
-  def toHi: Kana
-  def toKa: Kana
-  def toRo: Kana
-
-  def extendVowel(s: String = this.toString): String
-
-  def extendConsonant(s: String = this.toString): String
-
-  def extendVowelAndConsonant(s: String = this.toString) = extendVowel(extendConsonant(s))
+case class Kana(hiragana:String, katakana:String, romaji:String){
+  /*
+  def toHi: String
+  def toKa: String
+  def toRo: String
+*/
+  def extendVowel(s: String = this.toString): Kana = Kana(extendVowelHiragana(hiragana), extendVowelKatakana(katakana), extendVowelRomaji(romaji))
+  def extendConsonant(s: String = this.toString): Kana = Kana(extendConsonantHiragana(hiragana), extendConsonantKatakana(katakana), extendConsonantRomaji(romaji))
+  //def extendVowelAndConsonant(s: String = this.toString):Kana = Kana(extendVowel(extendConsonant(s).extendVowel().hiragana, extendVowel(extendConsonant(s).katakana).katakana, extendVowel(extendConsonant(s).romaji).romaji)
+  def extendVowelAndConsonant(s: String = this.toString):Kana = Kana(extendConsonant(s).extendVowel().hiragana, extendConsonant(s).extendVowel().katakana, extendConsonant(s).extendVowel().romaji)
 
   def ==(that: String) = this.toString == that
+
+  def extendVowelHiragana(s: String = this.hiragana): String = s + "う"
+  def extendConsonantHiragana(s: String = this.hiragana): String = "っ" + s
+
+  def extendVowelKatakana(s: String = this.katakana): String = s + "ー"
+  def extendConsonantKatakana(s: String = this.katakana): String = "ッ" + s
+
+  def extendVowelRomaji(s: String = this.romaji): String = s.init + Map('a' -> 'ā', 'e' -> 'ē', 'i' -> 'ī', 'o' -> 'ō', 'u' -> 'ū').getOrElse(s.last, s.last)
+  def extendConsonantRomaji(s: String = this.romaji): String = if (!japaneseChar.isVowel(s.head)) s.head + s else s
 
 }
 
@@ -23,73 +32,74 @@ object Kana {
   import Kana._
   lazy val tokenizer:Tokenizer = new Tokenizer()
 
-  val nonDiacritics = Set[Kana](Hiragana("あ", "ア", "a"), Hiragana("か", "カ", "ka"), Hiragana("さ", "サ", "sa"), Hiragana("た", "タ", "ta"), Hiragana("な", "ナ", "na"), Hiragana("は", "ハ", "ha"), Hiragana("ま", "マ", "ma"), Hiragana("や", "ヤ", "ya"), Hiragana("ら", "ラ", "ra"), Hiragana("わ", "ワ", "wa")
-    , Hiragana("い", "イ", "i"), Hiragana("き", "キ", "ki"), Hiragana("し", "シ", "shi"), Hiragana("ち", "チ", "chi"), Hiragana("に", "ニ", "ni"), Hiragana("ひ", "ヒ", "hi"), Hiragana("み", "ミ", "mi"), Hiragana("り", "リ", "ri")
-    , Hiragana("う", "ウ", "u"), Hiragana("く", "ク", "ku"), Hiragana("す", "ス", "su"), Hiragana("つ", "ツ", "tsu"), Hiragana("ぬ", "ヌ", "nu"), Hiragana("ふ", "フ", "fu"), Hiragana("む", "ム", "mu"), Hiragana("ゆ", "ユ", "yu"), Hiragana("る", "ル", "ru")
-    , Hiragana("え", "エ", "e"), Hiragana("け", "ケ", "ke"), Hiragana("せ", "セ", "se"), Hiragana("て", "テ", "te"), Hiragana("ね", "ネ", "ne"), Hiragana("へ", "ヘ", "he"), Hiragana("め", "メ", "me"), Hiragana("れ", "レ", "re")
-    , Hiragana("お", "オ", "o"), Hiragana("こ", "コ", "ko"), Hiragana("そ", "ソ", "so"), Hiragana("と", "ト", "to"), Hiragana("の", "ノ", "no"), Hiragana("ほ", "ホ", "ho"), Hiragana("も", "モ", "mo"), Hiragana("よ", "ヨ", "yo"), Hiragana("ろ", "ロ", "ro"), Hiragana("を", "ヲ", "wo")
-    , Hiragana("ん", "ン", "n"))
+  val nonDiacritics = Set[Kana](Kana("あ", "ア", "a"), Kana("か", "カ", "ka"), Kana("さ", "サ", "sa"), Kana("た", "タ", "ta"), Kana("な", "ナ", "na"), Kana("は", "ハ", "ha"), Kana("ま", "マ", "ma"), Kana("や", "ヤ", "ya"), Kana("ら", "ラ", "ra"), Kana("わ", "ワ", "wa")
+    , Kana("い", "イ", "i"), Kana("き", "キ", "ki"), Kana("し", "シ", "shi"), Kana("ち", "チ", "chi"), Kana("に", "ニ", "ni"), Kana("ひ", "ヒ", "hi"), Kana("み", "ミ", "mi"), Kana("り", "リ", "ri")
+    , Kana("う", "ウ", "u"), Kana("く", "ク", "ku"), Kana("す", "ス", "su"), Kana("つ", "ツ", "tsu"), Kana("ぬ", "ヌ", "nu"), Kana("ふ", "フ", "fu"), Kana("む", "ム", "mu"), Kana("ゆ", "ユ", "yu"), Kana("る", "ル", "ru")
+    , Kana("え", "エ", "e"), Kana("け", "ケ", "ke"), Kana("せ", "セ", "se"), Kana("て", "テ", "te"), Kana("ね", "ネ", "ne"), Kana("へ", "ヘ", "he"), Kana("め", "メ", "me"), Kana("れ", "レ", "re")
+    , Kana("お", "オ", "o"), Kana("こ", "コ", "ko"), Kana("そ", "ソ", "so"), Kana("と", "ト", "to"), Kana("の", "ノ", "no"), Kana("ほ", "ホ", "ho"), Kana("も", "モ", "mo"), Kana("よ", "ヨ", "yo"), Kana("ろ", "ロ", "ro"), Kana("を", "ヲ", "wo")
+    , Kana("ん", "ン", "n"))
 
 
-  private val preferedDiacritics = Set[Kana](Hiragana("が", "ガ", "ga"), Hiragana("ざ", "ザ", "za"), Hiragana("だ", "ダ", "da"), Hiragana("ば", "バ", "ba"), Hiragana("ぱ", "パ", "pa")
-    , Hiragana("ぎ", "ギ", "gi"), Hiragana("じ", "ジ", "ji"), Hiragana("び", "ビ", "bi"), Hiragana("ぴ", "ピ", "pi")
-    , Hiragana("ぐ", "グ", "gu"), Hiragana("ず", "ズ", "zu"), Hiragana("づ", "ヅ", "dzu"), Hiragana("ぶ", "ブ", "bu"), Hiragana("ぷ", "プ", "pu")
-    , Hiragana("げ", "ゲ", "ge"), Hiragana("ぜ", "ゼ", "ze"), Hiragana("で", "デ", "de"), Hiragana("べ", "ベ", "be"), Hiragana("ぺ", "ペ", "pe")
-    , Hiragana("ご", "ゴ", "go"), Hiragana("ぞ", "ゾ", "zo"), Hiragana("ど", "ド", "do"), Hiragana("ぼ", "ボ", "bo"), Hiragana("ぽ", "ポ", "po"))
-  private val unpreferedDiacritics = List(Hiragana("ぢ", "ヂ", "ji"))
+  private val preferedDiacritics = Set[Kana](Kana("が", "ガ", "ga"), Kana("ざ", "ザ", "za"), Kana("だ", "ダ", "da"), Kana("ば", "バ", "ba"), Kana("ぱ", "パ", "pa")
+    , Kana("ぎ", "ギ", "gi"), Kana("じ", "ジ", "ji"), Kana("び", "ビ", "bi"), Kana("ぴ", "ピ", "pi")
+    , Kana("ぐ", "グ", "gu"), Kana("ず", "ズ", "zu"), Kana("づ", "ヅ", "dzu"), Kana("ぶ", "ブ", "bu"), Kana("ぷ", "プ", "pu")
+    , Kana("げ", "ゲ", "ge"), Kana("ぜ", "ゼ", "ze"), Kana("で", "デ", "de"), Kana("べ", "ベ", "be"), Kana("ぺ", "ペ", "pe")
+    , Kana("ご", "ゴ", "go"), Kana("ぞ", "ゾ", "zo"), Kana("ど", "ド", "do"), Kana("ぼ", "ボ", "bo"), Kana("ぽ", "ポ", "po"))
+  private val unpreferedDiacritics = List(Kana("ぢ", "ヂ", "ji"))
   val diacritics = preferedDiacritics ++ unpreferedDiacritics
 
   private val preferedKana = nonDiacritics ++ preferedDiacritics
   val kana = nonDiacritics ++ diacritics
 
 
-  val hiragana = kana.map(_.toHi)
-  val katakana = kana.map(_.toKa)
-  val romaji = kana.map(_.toRo)
+  val hiragana = kana.map(_.hiragana)
+  val katakana = kana.map(_.katakana)
+  val romaji = kana.map(_.romaji)
 
 
-  val yoonNonDiacritics = Set[Kana](Hiragana("きゃ", "キャ", "kya"), Hiragana("しゃ", "シャ", "sha"), Hiragana("ちゃ", "チャ", "cha"), Hiragana("にゃ", "ニャ", "nya"), Hiragana("ひゃ", "ヒャ", "hya"), Hiragana("みゃ", "ミャ", "mya"), Hiragana("りゃ", "リャ", "rya")
-                                     ,Hiragana("きゅ", "キュ", "kyu"), Hiragana("しゅ", "シュ", "shu"), Hiragana("ちゅ", "チュ", "chu"), Hiragana("にゅ", "ニュ", "nyu"), Hiragana("ひゅ", "ヒュ", "hyu"), Hiragana("みゅ", "ミュ", "myu"), Hiragana("りゅ", "リュ", "ryu")
-                                     ,Hiragana("きょ", "キョ", "kyo"), Hiragana("しょ", "ショ", "sho"), Hiragana("ちょ", "チョ", "cho"), Hiragana("にょ", "ニョ", "nyo"), Hiragana("ひょ", "ヒョ", "hyo"), Hiragana("みょ", "ミョ", "myo"), Hiragana("りょ", "リョ", "ryo"))
+  val yoonNonDiacritics = Set[Kana](Kana("きゃ", "キャ", "kya"), Kana("しゃ", "シャ", "sha"), Kana("ちゃ", "チャ", "cha"), Kana("にゃ", "ニャ", "nya"), Kana("ひゃ", "ヒャ", "hya"), Kana("みゃ", "ミャ", "mya"), Kana("りゃ", "リャ", "rya")
+                                     ,Kana("きゅ", "キュ", "kyu"), Kana("しゅ", "シュ", "shu"), Kana("ちゅ", "チュ", "chu"), Kana("にゅ", "ニュ", "nyu"), Kana("ひゅ", "ヒュ", "hyu"), Kana("みゅ", "ミュ", "myu"), Kana("りゅ", "リュ", "ryu")
+                                     ,Kana("きょ", "キョ", "kyo"), Kana("しょ", "ショ", "sho"), Kana("ちょ", "チョ", "cho"), Kana("にょ", "ニョ", "nyo"), Kana("ひょ", "ヒョ", "hyo"), Kana("みょ", "ミョ", "myo"), Kana("りょ", "リョ", "ryo"))
 
-  private val preferedYoonDiacritics = Set[Kana](Hiragana("ぎゃ", "ギャ", "gya"), Hiragana("じゃ", "ジャ", "ja"), Hiragana("びゃ", "ビャ", "bya")
-                                                  ,Hiragana("ぎゅ", "ギュ", "gyu"), Hiragana("じゅ", "ジュ", "ju"), Hiragana("びゅ", "ビュ", "byu")
-                                                  ,Hiragana("ぎょ", "ギョ", "gyo"), Hiragana("じょ", "ジョ", "jo"), Hiragana("びょ", "ビョ", "byo"))
+  private val preferedYoonDiacritics = Set[Kana](Kana("ぎゃ", "ギャ", "gya"), Kana("じゃ", "ジャ", "ja"), Kana("びゃ", "ビャ", "bya")
+                                                  ,Kana("ぎゅ", "ギュ", "gyu"), Kana("じゅ", "ジュ", "ju"), Kana("びゅ", "ビュ", "byu")
+                                                  ,Kana("ぎょ", "ギョ", "gyo"), Kana("じょ", "ジョ", "jo"), Kana("びょ", "ビョ", "byo"))
 
-  private val unpreferedYoonDiacritics = Set(Hiragana("ぢゃ", "ヂャ", "ja"),Hiragana("ぢゅ", "ヂュ", "ju"),Hiragana("ぢょ", "ヂョ", "jo"), Hiragana("じぇ", "ジェ", "je"))
+  private val unpreferedYoonDiacritics = Set(Kana("ぢゃ", "ヂャ", "ja"),Kana("ぢゅ", "ヂュ", "ju"),Kana("ぢょ", "ヂョ", "jo"), Kana("じぇ", "ジェ", "je"))
 
   val yoonDiacritics = preferedYoonDiacritics ++ unpreferedYoonDiacritics
 
   val yoon: Set[Kana] = yoonDiacritics ++ yoonNonDiacritics
   private val preferedYoon: Set[Kana] = preferedYoonDiacritics ++ yoonNonDiacritics
 
-  val translateableSymbols:Set[Kana] = Set(Hiragana("、", "、", ","),Hiragana("。", "。", "."),Hiragana("！", "！", "!"),Hiragana("？", "？", "?"))
-  val translateableSymbolsStr:Set[String] = translateableSymbols.flatMap(k => List(k.toHi.toString, k.toKa.toString, k.toRo.toString))
+  val translateableSymbols:Set[Kana] = Set(Kana("、", "、", ","),Kana("。", "。", "."),Kana("！", "！", "!"),Kana("？", "？", "?"))
+  val translateableSymbolsStr:Set[String] = translateableSymbols.flatMap(k => List(k.hiragana, k.katakana, k.romaji))
   def isTranslateableSymbol(s:String) = translateableSymbolsStr.contains(s)
 
   val allKana: Set[Kana] = kana ++ yoon
+  /*
   val allHiragana: Set[Kana] = allKana.map(_.toHi)
   val allKatakana: Set[Kana] = allKana.map(_.toKa)
   val allRomaji: Set[Kana] = allKana.map(_.toRo)
-
+*/
   val allKanaStr: Set[String] = allKana.map(_.toString)
-  val allHiraganaStr: Set[String] = allHiragana.map(_.toString)
-  val allKatakanaStr: Set[String] = allKatakana.map(_.toString)
-  val allRomajiStr: Set[String] = allRomaji.map(_.toString)
+  val allHiraganaStr: Set[String] = allKana.map(_.hiragana)
+  val allKatakanaStr: Set[String] = allKana.map(_.katakana)
+  val allRomajiStr: Set[String] = allKana.map(_.romaji)
 
-  val allHiraganaEV: Set[String] = allHiragana.map(_.extendVowel())
-  val allKatakanaEV: Set[String] = allKatakana.map(_.extendVowel())
-  val allRomajiEV: Set[String] = allRomaji.map(_.extendVowel())
+  val allHiraganaEV: Set[String] = allKana.map(_.extendVowel().hiragana)
+  val allKatakanaEV: Set[String] = allKana.map(_.extendVowel().katakana)
+  val allRomajiEV: Set[String] = allKana.map(_.extendVowel().romaji)
   val allKanaEV: Set[String] = allHiraganaEV ++ allKatakanaEV ++ allRomajiEV
 
-  val allHiraganaEC: Set[String] = allHiragana.map(_.extendConsonant())
-  val allKatakanaEC: Set[String] = allKatakana.map(_.extendConsonant())
-  val allRomajiEC: Set[String] = allRomaji.map(_.extendConsonant())
+  val allHiraganaEC: Set[String] = allKana.map(_.extendConsonant().hiragana)
+  val allKatakanaEC: Set[String] = allKana.map(_.extendConsonant().katakana)
+  val allRomajiEC: Set[String] = allKana.map(_.extendConsonant().romaji)
   val allKanaEC: Set[String] = allHiraganaEC ++ allKatakanaEC ++ allRomajiEC
 
-  val allHiraganaECEV: Set[String] = allHiragana.map(_.extendVowelAndConsonant())
-  val allKatakanaECEV: Set[String] = allKatakana.map(_.extendVowelAndConsonant())
-  val allRomajiECEV: Set[String] = allRomaji.map(_.extendVowelAndConsonant())
+  val allHiraganaECEV: Set[String] = allKana.map(_.extendVowelAndConsonant().hiragana)
+  val allKatakanaECEV: Set[String] = allKana.map(_.extendVowelAndConsonant().katakana)
+  val allRomajiECEV: Set[String] = allKana.map(_.extendVowelAndConsonant().romaji)
   val allKanaECEV: Set[String] = allHiraganaECEV ++ allKatakanaECEV ++ allRomajiECEV
 
   val everyHiraganaSyllable: Set[String] = allHiraganaStr ++ allHiraganaEC ++ allHiraganaEV ++ allHiraganaECEV
@@ -97,7 +107,7 @@ object Kana {
   val everyRomajiSyllable: Set[String] = allRomajiStr ++ allRomajiEC ++ allRomajiEV ++ allRomajiECEV
   val everyKanaSyllable: Set[String] = everyRomajiSyllable ++ everyKatakanaSyllable ++ everyHiraganaSyllable
 
-  def featuresByLength(k: Kana) = List(k.toHi.toString, k.toKa.toString, k.toRo.toString, k.toHi.extendVowel(), k.toHi.extendConsonant(), k.toHi.extendVowelAndConsonant(), k.toKa.extendVowel(), k.toKa.extendConsonant(), k.toKa.extendVowelAndConsonant(),k.toRo.extendVowel(), k.toRo.extendConsonant(), k.toRo.extendVowelAndConsonant()).sortWith(_.length > _.length)
+  def featuresByLength(k: Kana) = List(k.hiragana, k.katakana, k.romaji, k.extendVowel().hiragana, k.extendConsonant().hiragana, k.extendVowelAndConsonant().hiragana, k.extendVowel().katakana, k.extendConsonant().katakana, k.extendVowelAndConsonant().katakana,k.extendVowel().romaji, k.extendConsonant().romaji, k.extendVowelAndConsonant().romaji).sortWith(_.length > _.length)
   private val ka:Map[Kana, List[String]] = preferedKana.map(k => (k -> featuresByLength(k))).toMap
   private val yo:Map[Kana, List[String]] = preferedYoon.map(k => (k -> featuresByLength(k))).toMap
   private val yoCHs:Map[Kana, List[String]] = unpreferedYoonDiacritics.map(k => (k -> featuresByLength(k))).toMap
@@ -129,21 +139,21 @@ object Kana {
       }
     }
     val noValue = if (s.headOption.isDefined) s.head.toString else ""
-    (NotKana(noValue,noValue,noValue), noValue)
+    (Kana(noValue,noValue,noValue), noValue)
   }
 
-  def transliterate(k: (Kana, String), f: Kana => Kana):String = {
-    if (k._1.toHi == k._2 || k._1.toKa == k._2 || k._1.toRo == k._2) f(k._1).toString
-    else if (k._1.toHi.extendVowel() == k._2 || k._1.toKa.extendVowel() == k._2 || k._1.toRo.extendVowel() == k._2) f(k._1).extendVowel()
-    else if (k._1.toHi.extendConsonant() == k._2 || k._1.toKa.extendConsonant() == k._2 || k._1.toRo.extendConsonant() == k._2) f(k._1).extendConsonant()
-    else f(k._1).extendVowelAndConsonant()
+  def transliterate(k: (Kana, String), f: Kana => String):String = {
+    if (k._1.hiragana == k._2 || k._1.katakana == k._2 || k._1.romaji == k._2) f(k._1).toString
+    else if (k._1.extendVowel().hiragana == k._2 || k._1.extendVowel().katakana == k._2 || k._1.extendVowel().romaji == k._2) f(k._1.extendVowel())
+    else if (k._1.extendConsonant().hiragana == k._2 || k._1.extendConsonant().katakana == k._2 || k._1.extendConsonant().romaji == k._2) f(k._1.extendConsonant())
+    else f(k._1.extendVowelAndConsonant())
   }
-  def toRomaji(ks:List[(Kana, String)]):String = ks.reverse.foldLeft("")((k, v) => k + transliterate(v, l => l.toRo)).replaceAll("・", " ")
-  def toHiragana(ks:List[(Kana, String)]):String = ks.reverse.foldLeft("")((k, v) => k + transliterate(v, l => l.toHi)).replaceAll("・", "")
-  def toKatakana(ks:List[(Kana, String)]):String = ks.reverse.foldLeft("")((k, v) => k + transliterate(v, l => l.toKa))
+  def toRomaji(ks:List[(Kana, String)]):String = ks.reverse.foldLeft("")((k, v) => k + transliterate(v, l => l.romaji)).replaceAll("・", " ")
+  def toHiragana(ks:List[(Kana, String)]):String = ks.reverse.foldLeft("")((k, v) => k + transliterate(v, l => l.hiragana)).replaceAll("・", "")
+  def toKatakana(ks:List[(Kana, String)]):String = ks.reverse.foldLeft("")((k, v) => k + transliterate(v, l => l.katakana))
 
 }
-
+/*
 case class Hiragana(val hiragana: String, val katakana: String, val romaji: String) extends Kana {
   override def extendVowel(s: String = this.hiragana): String = s + "う"
   override def extendConsonant(s: String = this.hiragana): String = "っ" + s
@@ -177,6 +187,7 @@ case class Romaji(val hiragana: String, val katakana: String, val romaji: String
   override def toKa: Katakana = Katakana(hiragana, katakana, romaji)
   override def toRo: Romaji = this
 }
+
 case class NotKana(val hiragana:String, val katakana:String, val romaji: String) extends Kana{
   override def toHi = this
   override def toKa = this
@@ -185,3 +196,4 @@ case class NotKana(val hiragana:String, val katakana:String, val romaji: String)
   override def extendVowel(s: String): String = hiragana
   override def extendConsonant(s: String): String = hiragana
 }
+*/
