@@ -268,7 +268,6 @@ object Main {
   def main(args: Array[String]): Unit = {
     import JapaneseInstances._
     import JapaneseSyntax._
-    //TODO: Write tests for misc features
     //TODO: Add okurigana function (checkout drafts worksheet)
     //TODO: Rename Kana fields and privitize them if necessary
     //TODO: Command line interaction

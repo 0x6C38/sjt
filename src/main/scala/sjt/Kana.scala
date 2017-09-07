@@ -47,9 +47,9 @@ object Kana {
   val kana = nonDiacritics ++ diacritics
 
 
-  val hiragana = kana.map(_.hiragana)
-  val katakana = kana.map(_.katakana)
-  val romaji = kana.map(_.romaji)
+  val hiragana:Set[String] = kana.map(_.hiragana)
+  val katakana:Set[String] = kana.map(_.katakana)
+  val romaji:Set[String] = kana.map(_.romaji)
 
 
   val yoonNonDiacritics = Set[Kana](Kana("きゃ", "キャ", "kya"), Kana("しゃ", "シャ", "sha"), Kana("ちゃ", "チャ", "cha"), Kana("にゃ", "ニャ", "nya"), Kana("ひゃ", "ヒャ", "hya"), Kana("みゃ", "ミャ", "mya"), Kana("りゃ", "リャ", "rya")
