@@ -135,7 +135,7 @@ object JapaneseInstances{
         val syllables = splitIntoSyllables(value)
         Transliteration(value, Kana(Kana.toHiragana(syllables), Kana.toKatakana(syllables), Kana.toRomaji(syllables)))
       } else {
-        val tokens = tokenizer.get.tokenize(value).asScala.toList
+        val tokens = tokenizer.getOrElse(Kana.tokenizer).tokenize(value).asScala.toList
         Transliteration(value, Kana(Kana.toHiragana(splitIntoSyllables(tokensToHiraganaString(tokens))),
                                     Kana.toKatakana(splitIntoSyllables(tokensToKatakanaString(tokens))).tail,
                                     Kana.toRomaji(splitIntoSyllables(tokensToRomajiString(tokens)))))
