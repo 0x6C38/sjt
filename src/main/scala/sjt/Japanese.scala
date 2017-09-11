@@ -44,6 +44,8 @@ trait Japanese[A] {
   def transliterate(value:A, tokenizer:Option[Tokenizer] = None):Transliteration
 
   def splitIntoSyllables(input:A, l: List[(Kana, String)] = Nil): List[(Kana,String)]
+
+  def tokenize(value:A, tokenizer:Option[Tokenizer] = None):Array[Token]
 }
 
 object JapaneseInstances{
@@ -87,6 +89,8 @@ object JapaneseInstances{
     override def extractUniqueHiragana(value: Char):Set[Char] = if (isHiragana(value)) Set[Char](value) else Set.empty
     override def extractUniqueKatakana(value: Char):Set[Char] = if (isKatakana(value)) Set[Char](value) else Set.empty
     override def extractUniqueKanji(value:Char):Set[Char] = if (isKanji(value)) Set[Char](value) else Set.empty
+
+    override def tokenize(value: Char, tokenizer: Option[Tokenizer]) = tokenizer.get.tokenize(value.toString).asScala.toArray
   }
 
   implicit val japaneseString = new Japanese[String] {
@@ -137,6 +141,7 @@ object JapaneseInstances{
                                     Kana.toRomaji(splitIntoSyllables(tokensToRomajiString(tokens)))))
       }
     }
+    override def tokenize(value:String, tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):Array[Token] = tokenizer.get.tokenize(value).asScala.toArray
 
     /*
     def okurigana(value:String, tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):List[(String, String)] = {
@@ -190,6 +195,8 @@ object JapaneseInstances{
                                                  Kana.toKatakana(syllables),
                                                   Kana.toRomaji(syllables)))
     }
+
+    override def tokenize(value: Token, tokenizer: Option[Tokenizer]):Array[Token] = Array(value)
   }
 }
 object Japanese {
@@ -218,6 +225,8 @@ object Japanese {
   def toKatakana[A](input:A)(implicit p: Japanese[A]): String = p.toKatakana(input)
   def toHiragana[A](input:A)(implicit p: Japanese[A]): String = p.toHiragana(input)
   def splitIntoSyllables[A](input:A)(implicit p: Japanese[A]):List[(Kana, String)] = p.splitIntoSyllables(input)
+
+  def tokenize[A](input:A)(implicit p: Japanese[A]):Array[Token] = p.tokenize(input)
 }
 
 object JapaneseSyntax {
@@ -251,6 +260,8 @@ object JapaneseSyntax {
     def toHiragana(t:Tokenizer = null)(implicit p: Japanese[A]): String = if (t != null) p.toHiragana(value, Some(t)) else p.toHiragana(value)
     def transliterate(t:Tokenizer = null)(implicit p: Japanese[A]):Transliteration = if (t != null) p.transliterate(value, Some(t)) else p.transliterate(value)
     def splitIntoSyllables(implicit p: Japanese[A]):List[(Kana, String)] = p.splitIntoSyllables(value)
+
+    def tokenize(t:Tokenizer = null)(implicit p: Japanese[A]):Array[Token] = if (t != null) p.tokenize(value, Some(t)) else p.tokenize(value)
   }
 }
 sealed trait SpacingConfig{
@@ -268,9 +279,11 @@ object Main {
   def main(args: Array[String]): Unit = {
     import JapaneseInstances._
     import JapaneseSyntax._
-    //TODO: Add okurigana function (checkout drafts worksheet)
+    //TODO: Add furigana function (checkout drafts worksheet)
     //TODO: Rename Kana fields and privitize them if necessary
     //TODO: Command line interaction
+
+    println("行きます".tokenize().mkString(","))
 
 
     println(Kana.allHiraganaEC)
