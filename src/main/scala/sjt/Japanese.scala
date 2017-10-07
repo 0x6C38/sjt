@@ -90,7 +90,7 @@ object JapaneseInstances{
     override def extractUniqueKatakana(value: Char):Set[Char] = if (isKatakana(value)) Set[Char](value) else Set.empty
     override def extractUniqueKanji(value:Char):Set[Char] = if (isKanji(value)) Set[Char](value) else Set.empty
 
-    override def tokenize(value: Char, tokenizer: Option[Tokenizer]) = tokenizer.get.tokenize(value.toString).asScala.toArray
+    override def tokenize(value: Char, tokenizer: Option[Tokenizer]) = tokenizer.getOrElse(Kana.tokenizer).tokenize(value.toString).asScala.toArray
   }
 
   implicit val japaneseString = new Japanese[String] {
@@ -141,7 +141,7 @@ object JapaneseInstances{
                                     Kana.toRomaji(splitIntoSyllables(tokensToRomajiString(tokens)))))
       }
     }
-    override def tokenize(value:String, tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):Array[Token] = tokenizer.get.tokenize(value).asScala.toArray
+    override def tokenize(value:String, tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):Array[Token] = tokenizer.getOrElse(Kana.tokenizer).tokenize(value).asScala.toArray
 
     /*
     def okurigana(value:String, tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):List[(String, String)] = {
@@ -179,7 +179,7 @@ object JapaneseInstances{
     def toKatakana(value: Token, tokenizer:Option[Tokenizer] = None): String = Kana.toKatakana(splitIntoSyllables(value))
     def toHiragana(value: Token, tokenizer:Option[Tokenizer] = None): String = Kana.toHiragana(splitIntoSyllables(value))
 */
-    override def splitIntoSyllables(input: Token, l: List[(Kana, String)]): List[(Kana, String)] = japaneseString.splitIntoSyllables(tokenToString(input))
+    override def splitIntoSyllables(input: Token, l: List[(Kana, String)] = Nil): List[(Kana, String)] = japaneseString.splitIntoSyllables(tokenToString(input))
     private def tokenToString(input:Token): String = if (input.getPronunciation != "*") input.getPronunciation else input.getSurface
     override def extractHiragana(value: Token):String = japaneseString.extractHiragana(value.getSurface)
     override def extractKatakana(value: Token):String = japaneseString.extractKatakana(value.getSurface)
@@ -276,85 +276,151 @@ final case class KatakanaSpacing() extends SpacingConfig()
 final case class RomajiSpacing() extends SpacingConfig()
 
 object Main {
+  import JapaneseInstances._
+  import JapaneseSyntax._
   def main(args: Array[String]): Unit = {
-    import JapaneseInstances._
-    import JapaneseSyntax._
+
     //TODO: Add furigana function (checkout drafts worksheet)
     //TODO: Rename Kana fields and privitize them if necessary
     //TODO: Command line interaction
 
-    println("行きます".tokenize().mkString(","))
+    val sample1 = "猫が好きです"
+    val sample2 = "図書館"
+    val sample3 = "最近"
+    val sample4 = "行きます"
+    val sample5 = "行"
+    /*
+    println(sample1.tokenize().mkString(","))
+    println(sample2.tokenize().mkString(","))
+    println(sample3.tokenize().mkString(","))
+    println(sample4.tokenize().mkString(","))
+    println(sample5.tokenize().mkString(","))
+    //sample4.tokenize().map(furiganaFor(_))
+    println(sample1.tokenize().map(furiganaFor(_)).mkString(","))
+    println(sample2.tokenize().map(furiganaFor(_)).mkString(","))
+    println(sample3.tokenize().map(furiganaFor(_)).mkString(","))
+    println(sample4.tokenize().map(furiganaFor(_)).mkString(","))
+    println(sample5.tokenize().map(furiganaFor(_)).mkString(","))
 
-
-    println(Kana.allHiraganaEC)
-    println(Kana.allHiraganaEV)
-    println(Kana.allHiraganaECEV)
-    val k = Kana("と", "ト", "to")
-    val kEV = k.extendVowel()
-    val kEC = k.extendConsonant()
-    println(s"kEV: $kEV")
-    println(s"kEC: $kEC")
-    println(k.extendVowelAndConsonant()) //error converting both
-    println(kEV.extendVowelAndConsonant()) //error converting both
-    println(kEC.extendVowelAndConsonant()) //error converting both
-
-    println("------------------")
-
-    val sample = "日本はチョョすごいい本当"
-    println(sample.extractHiragana)
-    println(sample.extractKatakana)
-    println(sample.extractKana)
-    println(sample.extractKanji)
-
-    println(sample.extractUniqueHiragana)
-    println(sample.extractUniqueKatakana)
-    println(sample.extractUniqueKana)
-    println(sample.extractUniqueKanji)
-
-
-    val t1 = System.currentTimeMillis()
-    val a = Kana.diacritics
-    val b = Kana.yoonNonDiacritics
-    val leTO1 = Kana.tokenizer
-    val t2 = System.currentTimeMillis()
-    val deltaT = t2-t1
-    println(s"Δt = $deltaT")
-
-    val t3 = System.currentTimeMillis()
-    val leTO2 = Kana.tokenizer
-    val t4 = System.currentTimeMillis()
-    val deltaT2 = t4-t3
-    println(s"Δt = $deltaT2")
-
-
-    val t5 = System.currentTimeMillis()
-    println("毎日私は午前十時に起きます。十時から十二まで勉強します。午後一時に昼ごはんを食べます。あとでまた勉強をします。六時に地下鉄で大学へ行きます。十一時に私の家へ帰ります。そして晩ご飯を食べます。次に少し仕事をします。プログラミンをします。難しいです。それでも、私は大好きです。なぜならとても楽しいですから。朝の五時にねます。".toRomaji())
-    println("診察行ってきました。最終目標は心臓移植というのは変わらないそうで、自分の心臓じゃ生きられないみたいです。お金もかかるし、手術するのも入院するのももう嫌だな～…なんてことを考えながらvitaで朧村正をプレイしてました！　牛鬼と馬鬼ってボスより強くない！？　ぜんぜん勝てないんだけど…".toRomaji())
-    println("「いま」起きていることを見つけよう。国内のニュースから身近なできごとまで、みんなの話題がわかる「いま」起きていることを見つけよう。国内のニュースから身近なできごとまで、みんなの話題がわかる".toRomaji())
-    println("皆さんは日本の四つの大きな島の名前を知っていますか。日本には東京のような、世界によく知られている都市がたくさんありますが、皆さんはどんな都市名前を聞きたことがありますか。".toRomaji())
-    val t6 = System.currentTimeMillis()
-    val deltaT3 = t6-t5
-    println(s"Δt = $deltaT3")
-
-
-    val t7 = System.currentTimeMillis()
-    println("毎日私は午前十時に起きます。十時から十二まで勉強します。午後一時に昼ごはんを食べます。あとでまた勉強をします。六時に地下鉄で大学へ行きます。十一時に私の家へ帰ります。そして晩ご飯を食べます。次に少し仕事をします。プログラミンをします。難しいです。それでも、私は大好きです。なぜならとても楽しいですから。朝の五時にねます。".toRomaji())
-    println("診察行ってきました。最終目標は心臓移植というのは変わらないそうで、自分の心臓じゃ生きられないみたいです。お金もかかるし、手術するのも入院するのももう嫌だな～…なんてことを考えながらvitaで朧村正をプレイしてました！　牛鬼と馬鬼ってボスより強くない！？　ぜんぜん勝てないんだけど…".toRomaji())
-    println("「いま」起きていることを見つけよう。国内のニュースから身近なできごとまで、みんなの話題がわかる「いま」起きていることを見つけよう。国内のニュースから身近なできごとまで、みんなの話題がわかる".toRomaji())
-    println("皆さんは日本の四つの大きな島の名前を知っていますか。日本には東京のような、世界によく知られている都市がたくさんありますが、皆さんはどんな都市名前を聞きたことがありますか。".toRomaji())
-    val t8 = System.currentTimeMillis()
-    val deltaT4 = t8-t7
-    println(s"Δt = $deltaT4")
-
-    val t9 = System.currentTimeMillis()
-    println("毎日私は午前十時に起きます。十時から十二まで勉強します。午後一時に昼ごはんを食べます。あとでまた勉強をします。六時に地下鉄で大学へ行きます。十一時に私の家へ帰ります。そして晩ご飯を食べます。次に少し仕事をします。プログラミンをします。難しいです。それでも、私は大好きです。なぜならとても楽しいですから。朝の五時にねます。".toRomaji(leTO1))
-    println("診察行ってきました。最終目標は心臓移植というのは変わらないそうで、自分の心臓じゃ生きられないみたいです。お金もかかるし、手術するのも入院するのももう嫌だな～…なんてことを考えながらvitaで朧村正をプレイしてました！　牛鬼と馬鬼ってボスより強くない！？　ぜんぜん勝てないんだけど…".toRomaji(leTO1))
-    println("「いま」起きていることを見つけよう。国内のニュースから身近なできごとまで、みんなの話題がわかる「いま」起きていることを見つけよう。国内のニュースから身近なできごとまで、みんなの話題がわかる".toRomaji(leTO1))
-    println("皆さんは日本の四つの大きな島の名前を知っていますか。日本には東京のような、世界によく知られている都市がたくさんありますが、皆さんはどんな都市名前を聞きたことがありますか。".toRomaji(leTO1))
-    val t10 = System.currentTimeMillis()
-    val deltaT5 = t10-t9
-    println(s"Δt = $deltaT5")/*
 */
+    val lk = "四月"
+    val lk2 = "月曜日" //最近
+    //val lk = "図書館".extractKana
+    //val lk2 = "図書館".extractKana
+    /*
+
+
+    println(lk)
+    val kanjiReadings = lk.tokenize()
+    println("kr is empty: " + kanjiReadings.isEmpty)
+    println("kr size: " + kanjiReadings.size)
+    println(kanjiReadings.mkString(","))
+*/
+    val sampleReadings = Map[Char, List[String]]('月' -> List("げつ", "がつ", "つき"), '曜' -> List("よう"), '日' -> List("ひ", "び", "にち"), '四' -> List("し", "よん"))
+
+    val t = lk.tokenize()
+    println("t:" + t.mkString(","))
+    println("t:" + t.size)
+
+    println("t: " + t(0))
+    val r = t(0).transliterate()//.diff(t.extractKana)
+    val r2 = t(0).splitIntoSyllables//.diff(t.extractKana)
+    val r3 = collapseOnNSyllables(r2)
+    val t2 = lk2.tokenize()
+    val r6 = t2(0).splitIntoSyllables
+    val r4 = collapseOnNSyllables(r6)
+    println("r: " + r)
+    println("r2: " + r2)
+    println("r3: " + r3)
+    println("r4: " + r4)
+
+    val rs = furiganaForString(lk, sampleReadings)
+    val rsIsEmpty = rs.isEmpty
+    println("rs is empty: " + rsIsEmpty)
+    if(!rsIsEmpty) println(rs.mkString(",")) else println("nope")
+
+    val rs2 = furiganaForString(lk2, sampleReadings)
+    val r2IsEmpty = rs2.isEmpty
+    println("rs2 is empty: " + r2IsEmpty)
+    if(!r2IsEmpty) println(rs2.mkString(",")) else println("nope")
+    /*
+
+    */
+    /*
+    val kanjiSyllables = lk.tokenize().head.toHiragana().diff(lk.tokenize().head.extractKana).splitIntoSyllables
+    println(kanjiSyllables)
+    */
+
 
   }
-}
+
+  def furiganaForString(s: String, readingsMap:Map[Char, List[String]] = Map()): Array[Map[Char, String]] = {
+    s.tokenize().map(t => furiganaFor(t, readingsMap)).filterNot(_.isEmpty)
+  }
+
+  def furiganaFor(token:Token, readingsMap:Map[Char, List[String]] = Map()):Map[Char, String] = {
+    val kanjis:String = token.getSurface.extractKanji
+    val kanjiUnique:Set[Char] = token.getSurface.extractUniqueKanji
+    val kanjiSyllables:List[(Kana, String)] = token.toHiragana().diff(token.extractKana).splitIntoSyllables
+    val maxSyllablesPerKanji = if (kanjis.size == 0) 0 else Math.floor(kanjiSyllables.size / kanjis.size).toInt
+
+    val kanjiPartInHiragana = token.toHiragana().diff(token.extractKana)
+
+    println("Kanji unique = " + kanjiUnique.mkString(","))
+    println("readingsMap = " + readingsMap.mkString(","))
+    val viableReadings = readingsMap.filter(m => kanjiUnique.contains(m._1)).map(m => m._1 -> m._2.filter(kanjiPartInHiragana.contains(_)))
+    val groupedViableReadings = viableReadings.partition(m => m._2.size > 1)
+
+    val onlyOneWay = groupedViableReadings._1.isEmpty //if (onlyOneWay) return groupedViableReadings._2 else furiganaFor(kanjiPartInHiraganAvailableForUnviableReadings)
+
+    val kanjiPartInHiraganAvailableForUnviableReadings = groupedViableReadings._1.foldLeft(kanjiPartInHiragana){
+      (z,i) => z.replaceFirst(i._2.head, "")
+    }
+
+    println("Viable readings = " + viableReadings.mkString(","))
+    println("groupedViableReadings readings = " + groupedViableReadings._2.mkString(","))
+    println("onlyOneWay: " + onlyOneWay)
+
+
+    val kanjiSyllablesNFolded = collapseOnNSyllables(kanjiSyllables).map(_._2)
+
+    val cutGroupings = cut(kanjiSyllablesNFolded, kanjis.size).map(_.mkString(""))
+
+    println("Cut groupings: " + cutGroupings.mkString(","))
+
+    if (kanjis.size == 0) Map[Char, String]()
+    else if (kanjis.size == 1) Map(kanjis.head -> kanjiPartInHiragana)
+    else if (kanjis.size == kanjiSyllablesNFolded.size) kanjis zip kanjiSyllablesNFolded toMap //println("kanjis.size = " + kanjis.size + ", kanjiSyllablesNFolded.size = " + kanjiSyllablesNFolded.size)
+    //else if (kanjis.size != kanjiSyllables.size && !readingsMap.isEmpty) we have readings
+    //else if (kanjiSyllables.size % kanjis.size == 0) kanjiSyllables.sliding(kanjiSyllables.size / kanjis.size, kanjiSyllables.size / kanjis.size)
+    //else Map[Char,String]()
+    else kanjis.zip(cutGroupings).toMap //New implementation Does it work???
+    //else kanjiSyllables.toMap.grouped(kanjiSyllables.size / kanjis.size)//(kanjiSyllables.size / kanjis.size, kanjiSyllables.size / kanjis.size)
+  }
+  def collapseOnNSyllables(syllables:List[(Kana,String)]):List[(Kana,String)] = {
+    //val syllablesWithN = syllables.zipWithIndex.filter(_._1._1.hiragana == "ん")
+    //val preSyllablesWithN = syllablesWithN.map(s => if (s._2 > 0) s._2 - 1 else s._2)
+    syllables.reverse.foldLeft(List[(Kana,String)]()){
+      (l:List[(Kana,String)],syllable:(Kana,String)) =>
+        if (syllable._1.hiragana == "ん" && !l.isEmpty){
+          val last = if (l.headOption.isDefined) l.head._1 else Kana("","","") //PROBLEM IS HERE
+          (Kana(last.hiragana + syllable._1.hiragana, last.katakana + syllable._1.katakana, last.romaji + syllable._1.romaji)
+            , last.hiragana + syllable._2)::l.tail
+          //val result:Int = if (!l.isEmpty) (fusedKana, syllable._2)::l.tail else (fusedKana, syllable._2)::l
+        } else syllable :: l
+    }.reverse
+  }
+
+  def cut[A](xs: Seq[A], n: Int):Vector[Seq[A]] = {
+    val m = xs.length
+    val targets = (0 to n).map{x => math.round((x.toDouble*m)/n).toInt}
+    def snip(xs: Seq[A], ns: Seq[Int], got: Vector[Seq[A]]): Vector[Seq[A]] = {
+      if (ns.length<2) got
+      else {
+        val (i,j) = (ns.head, ns.tail.head)
+        snip(xs.drop(j-i), ns.tail, got :+ xs.take(j-i))
+      }
+    }
+    snip(xs, targets, Vector.empty)
+  }
+ }

@@ -11,9 +11,11 @@ val cachedTokenizer = new Tokenizer()
 val nums = (1 to 6).toArray
 println(nums.sliding(2,2).toList.mkString(","))
 
-val sample = "猫が好きです".splitIntoSyllables
-val sample2 = "図書館".splitIntoSyllables
+val sample = "猫が好きです"
+val sample2 = "図書館"
 val sample3 = "最近"
+val sample4 = "行きます"
+val sample5 = "行"
 
 def collapseOnNSyllables(syllables:List[(Kana,String)]):List[(Kana,String)] = {
   val syllablesWithN = syllables.zipWithIndex.filter(_._1._1.hiragana == "ん")
@@ -43,11 +45,17 @@ def furiganaFor(token:Token, readingsMap:Map[Char, List[String]] = Map()):Map[Ch
   val kanjiSyllablesNFolded = collapseOnNSyllables(kanjiSyllables).map(_._2)
 
   if (kanjis.size == 0) Map[Char, String]()
-  else if (kanjis.size == 1) Map(kanjis.head -> token.getSurface.diff(token.extractKana))
+  else if (kanjis.size == 1) Map(kanjis.head -> token.toHiragana().diff(token.extractKana))
   else if (kanjis.size == kanjiSyllablesNFolded.size) kanjis zip kanjiSyllablesNFolded toMap
   //else if (kanjis.size != kanjiSyllables.size && !readingsMap.isEmpty) we have readings
   //else if (kanjiSyllables.size % kanjis.size == 0) kanjiSyllables.sliding(kanjiSyllables.size / kanjis.size, kanjiSyllables.size / kanjis.size)
   else Map[Char,String]()
 }
-"行きます".tokenize()
-furiganaFor("行きます".tokenize().head)
+sample2.tokenize()
+sample4.tokenize()
+sample5.tokenize()
+//furiganaFor(sample4.tokenize())
+sample4.tokenize().map(furiganaFor(_))
+//sample4.tokenize().map(furiganaFor(_))
+furiganaFor(sample4.tokenize().head)
+furiganaFor(sample5.tokenize().head)
