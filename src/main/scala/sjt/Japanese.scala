@@ -306,7 +306,9 @@ object Main {
 
 */
     val lk = "四月"
-    val lk2 = "月曜日" //最近
+    //val lk2 = "時々" //最近
+    //val lk2 = "月曜日" //最近
+    val lk2 = "猫が好きです" //最近
     //val lk = "図書館".extractKana
     //val lk2 = "図書館".extractKana
     /*
@@ -327,14 +329,14 @@ object Main {
     println("t: " + t(0))
     val r = t(0).transliterate()//.diff(t.extractKana)
     val r2 = t(0).splitIntoSyllables//.diff(t.extractKana)
-    val r3 = collapseOnNSyllables(r2)
+    //val r3 = collapseOnNSyllables(r2)
     val t2 = lk2.tokenize()
     val r6 = t2(0).splitIntoSyllables
-    val r4 = collapseOnNSyllables(r6)
+    //val r4 = collapseOnNSyllables(r6)
     println("r: " + r)
     println("r2: " + r2)
-    println("r3: " + r3)
-    println("r4: " + r4)
+    //println("r3: " + r3)
+    //println("r4: " + r4)
 
 
     println("")
@@ -368,65 +370,61 @@ object Main {
   }
 
   def furiganaFor(token:Token, readingsMap:Map[Char, List[String]] = Map()):Map[Char, String] = {
+    def collapseOnNSyllables(syllables:List[(Kana,String)]):List[(Kana,String)] = {
+      //val syllablesWithN = syllables.zipWithIndex.filter(_._1._1.hiragana == "ん")
+      //val preSyllablesWithN = syllablesWithN.map(s => if (s._2 > 0) s._2 - 1 else s._2)
+      syllables.reverse.foldLeft(List[(Kana,String)]()){
+        (l:List[(Kana,String)],syllable:(Kana,String)) =>
+          if (syllable._1.hiragana == "ん" && !l.isEmpty){
+            val last = if (l.headOption.isDefined) l.head._1 else Kana("","","") //PROBLEM IS HERE
+            (Kana(last.hiragana + syllable._1.hiragana, last.katakana + syllable._1.katakana, last.romaji + syllable._1.romaji)
+              , last.hiragana + syllable._2)::l.tail
+            //val result:Int = if (!l.isEmpty) (fusedKana, syllable._2)::l.tail else (fusedKana, syllable._2)::l
+          } else syllable :: l
+      }.reverse
+    }
+    def cut[A](xs: Seq[A], n: Int):Vector[Seq[A]] = {
+      val m = xs.length
+      val targets = (0 to n).map{x => math.round((x.toDouble*m)/n).toInt}
+      def snip(xs: Seq[A], ns: Seq[Int], got: Vector[Seq[A]]): Vector[Seq[A]] = {
+        if (ns.length<2) got
+        else {
+          val (i,j) = (ns.head, ns.tail.head)
+          snip(xs.drop(j-i), ns.tail, got :+ xs.take(j-i))
+        }
+      }
+      snip(xs, targets, Vector.empty)
+    }
+    def reduceUnkownsByReadingsMap(s:String, hiraganaReading:String, readingsMap:Map[Char, List[String]] = Map()): Map[Char, String] = {
+      def calculateViableReadings(reading: String, kanjisInText: Set[Char], readingsMap: Map[Char, List[String]]): Map[Char, List[String]] = readingsMap.filter(m => kanjisInText.contains(m._1)).map(m => m._1 -> m._2.filter(reading.contains(_)))
+      def groupViableReadings(readings: Map[Char, List[String]]): (Map[Char, scala.List[String]], Map[Char, scala.List[String]]) = readings.partition(m => m._2.size > 1)
+      def onlyOneWay(grViableReadings: (Map[Char, scala.List[String]], Map[Char, scala.List[String]])): Boolean = grViableReadings._1.isEmpty
+
+      val viableReadings: Map[Char, List[String]] = calculateViableReadings(hiraganaReading, s.extractUniqueKanji, readingsMap)
+
+      val groupedViableReadings = groupViableReadings(viableReadings) //find duplicates?
+      val multipleAlternatives = groupedViableReadings._1
+      val noAlternatives = groupedViableReadings._2.filter(i => i._2.isEmpty)
+      val singleAlternatives = groupedViableReadings._2.filterNot(i => i._2.isEmpty).map(i => (i._1, i._2.head))
+
+      val unknownPartHiragana: String = singleAlternatives.foldLeft(hiraganaReading) { (z, i) => z.replaceFirst(i._2, "") }
+      val unknownKanjis: String = singleAlternatives.foldLeft(s){ (z, i) => z.replaceFirst(i._1.toString, "") }
+
+      val oneWay = multipleAlternatives.isEmpty && noAlternatives.isEmpty && unknownKanjis == "" && unknownPartHiragana == ""//added noalternatives
+
+      if (oneWay) singleAlternatives
+      else if (!oneWay && s != unknownKanjis) singleAlternatives ++ reduceUnkownsByReadingsMap(unknownKanjis, unknownPartHiragana, multipleAlternatives)
+      else singleAlternatives ++ (unknownKanjis ++ noAlternatives.map(_._1).mkString("") zip cut(collapseOnNSyllables(unknownPartHiragana.splitIntoSyllables).map(_._2), unknownKanjis.size).map(_.mkString(""))).toMap //unknownPartHiragana.extractKanji
+    }
+    def extractKanjiSyllables(s:String) = s.toHiragana().diff(s.extractKana).splitIntoSyllables
+
     val kanjis:String = token.getSurface.extractKanji
     val numKanjis:Int = kanjis.size
     val kanjiUnique:Set[Char] = token.getSurface.extractUniqueKanji
-    def extractKanjiSyllables(s:String) = s.toHiragana().diff(s.extractKana).splitIntoSyllables
     val kanjiSyllables:List[(Kana, String)] = extractKanjiSyllables(token.toHiragana())
 
     val kanjiPartInHiragana:String = token.toHiragana().diff(token.extractKana)
 
-    println("Kanji unique = " + kanjiUnique.mkString(","))
-    println("readingsMap = " + readingsMap.mkString(","))
-
-    def calculateViableReadings(reading:String, kanjisInText:Set[Char], readingsMap:Map[Char, List[String]]):Map[Char, List[String]] = readingsMap.filter(m => kanjisInText.contains(m._1)).map(m => m._1 -> m._2.filter(reading.contains(_)))
-    def groupViableReadings(readings:Map[Char, List[String]]):(Map[Char, scala.List[String]], Map[Char, scala.List[String]]) = readings.partition(m => m._2.size > 1)
-    def onlyOneWay(grViableReadings: (Map[Char, scala.List[String]], Map[Char, scala.List[String]])):Boolean = grViableReadings._1.isEmpty
-
-
-    def reduceUnkownsByReadingsMap(s:String, hiraganaReading:String, readingsMap:Map[Char, List[String]] = Map()): Map[Char, String] = {
-      println("s: " + s, " readings map: " + readingsMap.mkString(",") + " hiraganaReading: " + hiraganaReading)
-      val viableReadings: Map[Char, List[String]] = calculateViableReadings(hiraganaReading, s.extractUniqueKanji, readingsMap)
-      //find duplicates?
-      val groupedViableReadings = groupViableReadings(viableReadings)
-      val multipleAlternatives = groupedViableReadings._1
-      //println("single alternatives pre-: " + groupedViableReadings._2)
-      val noAlternatives = groupedViableReadings._2.filter(i => i._2.isEmpty)
-      //println("no alternatives: " + noAlternatives)
-      val singleAlternatives = groupedViableReadings._2.filterNot(i => i._2.isEmpty).map(i => (i._1, i._2.head))
-
-
-      val unknownPartHiragana: String = singleAlternatives.foldLeft(hiraganaReading) {
-        (z, i) => z.replaceFirst(i._2, "") //._2
-      }
-      val unknownKanjis: String = singleAlternatives.foldLeft(s){
-        (z, i) => z.replaceFirst(i._1.toString, "") //._2
-      }
-
-      val oneWay = multipleAlternatives.isEmpty && noAlternatives.isEmpty && unknownKanjis == "" && unknownPartHiragana == ""//added noalternatives
-
-      println("unknownKanjis: " + unknownKanjis)
-      println("Viable readings = " + viableReadings.mkString(","))
-      println("groupedViableReadings readings = \n no-read: " + noAlternatives.mkString(",") + "\n single: " + singleAlternatives.mkString(",") + "\n multiple:" + multipleAlternatives.mkString(","))//._2
-      println("oneWay: " + oneWay)
-
-      println("unknownPartHiragana: " + unknownPartHiragana)
-      println("---loop---")
-
-      if (oneWay) singleAlternatives
-      else if (!oneWay && s != unknownKanjis) singleAlternatives ++ reduceUnkownsByReadingsMap(unknownKanjis, unknownPartHiragana, multipleAlternatives)
-      //else if (!oneWay && s == unknownKanjis && !noAlternatives.isEmpty)
-      else {
-        //val unknowable = (unknownKanjis zip cut(collapseOnNSyllables(extractKanjiSyllables(unknownPartHiragana)).map(_._2), unknownKanjis.size).map(_.mkString(""))).toMap //unknownPartHiragana.extractKanji
-        //added no alternatives
-        val unknowable = (unknownKanjis ++ noAlternatives.map(_._1).mkString("") zip cut(collapseOnNSyllables(unknownPartHiragana.splitIntoSyllables).map(_._2), unknownKanjis.size).map(_.mkString(""))).toMap //unknownPartHiragana.extractKanji
-        println("unknowable:" + unknowable)
-        println("---actual loop---")
-        singleAlternatives ++ unknowable
-      }
-    }
-
-    def distributeKanjiEvenly(s:String) = (s.extractKanji zip cut(collapseOnNSyllables(extractKanjiSyllables(s)).map(_._2), s.extractKanji.size).map(_.mkString(""))).toMap
     val kanjiSyllablesNFolded = collapseOnNSyllables(kanjiSyllables).map(_._2)
 
     val cutGroupings = cut(kanjiSyllablesNFolded, kanjis.size).map(_.mkString(""))
@@ -436,31 +434,5 @@ object Main {
     else if (numKanjis == kanjiSyllablesNFolded.size) kanjis zip kanjiSyllablesNFolded toMap //println("kanjis.size = " + kanjis.size + ", kanjiSyllablesNFolded.size = " + kanjiSyllablesNFolded.size)
     else if (numKanjis != kanjiSyllablesNFolded.size && !readingsMap.isEmpty) reduceUnkownsByReadingsMap(kanjis, kanjiPartInHiragana, readingsMap)//was prev set to kanjiSyllables
     else kanjis.zip(cutGroupings).toMap //New implementation Does it work???
-  }
-  def collapseOnNSyllables(syllables:List[(Kana,String)]):List[(Kana,String)] = {
-    //val syllablesWithN = syllables.zipWithIndex.filter(_._1._1.hiragana == "ん")
-    //val preSyllablesWithN = syllablesWithN.map(s => if (s._2 > 0) s._2 - 1 else s._2)
-    syllables.reverse.foldLeft(List[(Kana,String)]()){
-      (l:List[(Kana,String)],syllable:(Kana,String)) =>
-        if (syllable._1.hiragana == "ん" && !l.isEmpty){
-          val last = if (l.headOption.isDefined) l.head._1 else Kana("","","") //PROBLEM IS HERE
-          (Kana(last.hiragana + syllable._1.hiragana, last.katakana + syllable._1.katakana, last.romaji + syllable._1.romaji)
-            , last.hiragana + syllable._2)::l.tail
-          //val result:Int = if (!l.isEmpty) (fusedKana, syllable._2)::l.tail else (fusedKana, syllable._2)::l
-        } else syllable :: l
-    }.reverse
-  }
-
-  def cut[A](xs: Seq[A], n: Int):Vector[Seq[A]] = {
-    val m = xs.length
-    val targets = (0 to n).map{x => math.round((x.toDouble*m)/n).toInt}
-    def snip(xs: Seq[A], ns: Seq[Int], got: Vector[Seq[A]]): Vector[Seq[A]] = {
-      if (ns.length<2) got
-      else {
-        val (i,j) = (ns.head, ns.tail.head)
-        snip(xs.drop(j-i), ns.tail, got :+ xs.take(j-i))
-      }
-    }
-    snip(xs, targets, Vector.empty)
   }
  }
