@@ -162,7 +162,7 @@ object JapaneseInstances{
 
     override def tokenize(value: Token, tokenizer: Option[Tokenizer]):Array[Token] = Array(value)
 
-    def furigana(token:Token, readingsMap:Map[Char, List[String]] = Map()):Map[Char, String] = {
+    def furigana(token:Token, readingsMap:Map[Char, List[String]] = Map()):Array[(Char, String)] = {
       def collapseOnNSyllables(syllables:List[(Kana,String)]):List[(Kana,String)] = {
         //val syllablesWithN = syllables.zipWithIndex.filter(_._1._1.hiragana == "ん")
         //val preSyllablesWithN = syllablesWithN.map(s => if (s._2 > 0) s._2 - 1 else s._2)
@@ -188,25 +188,26 @@ object JapaneseInstances{
         }
         snip(xs, targets, Vector.empty)
       }
-      def reduceUnkownsByReadingsMap(s:String, hiraganaReading:String, readingsMap:Map[Char, List[String]] = Map()): Map[Char, String] = {
-        def calculateViableReadings(reading: String, kanjisInText: Set[Char], readingsMap: Map[Char, List[String]]): Map[Char, List[String]] = readingsMap.filter(m => kanjisInText.contains(m._1)).map(m => m._1 -> m._2.filter(reading.contains(_)))
-        def groupViableReadings(readings: Map[Char, List[String]]): (Map[Char, scala.List[String]], Map[Char, scala.List[String]]) = readings.partition(m => m._2.size > 1)
+      def reduceUnkownsByReadingsMap(s:String, hiraganaReading:String, readingsMap:Array[(Char, List[String])] = Array()): Array[(Char, String)] = {
+        def calculateViableReadings(reading: String, kanjisInText: Set[Char], readingsMap: Array[(Char, List[String])]): Array[(Char, List[String])] = readingsMap.filter(m => kanjisInText.contains(m._1)).map(m => m._1 -> m._2.filter(reading.contains(_)))
+        def groupViableReadings(readings: Array[(Char, List[String])]): (Array[(Char, List[String])], Array[(Char, List[String])]) = readings.partition(m => m._2.size > 1)
         def onlyOneWay(grViableReadings: (Map[Char, scala.List[String]], Map[Char, scala.List[String]])): Boolean = grViableReadings._1.isEmpty
 
-        val viableReadings: Map[Char, List[String]] = calculateViableReadings(hiraganaReading, japaneseString.extractUniqueKanji(s), readingsMap)
+        val viableReadings: Array[(Char, List[String])] = calculateViableReadings(hiraganaReading, japaneseString.extractUniqueKanji(s), readingsMap)
 
-        val groupedViableReadings = groupViableReadings(viableReadings) //find duplicates?
-        val multipleAlternatives = groupedViableReadings._1
-        val noAlternatives = groupedViableReadings._2.filter(i => i._2.isEmpty)
-        val singleAlternatives = groupedViableReadings._2.filterNot(i => i._2.isEmpty).map(i => (i._1, i._2.head))
+        val groupedViableReadings:(Array[(Char, List[String])], Array[(Char, List[String])]) = groupViableReadings(viableReadings) //find duplicates?
+        val multipleAlternatives:Array[(Char, List[String])] = groupedViableReadings._1
+        //val test:Long = groupedViableReadings._2
+        val noAlternatives:Array[(Char, List[String])] = groupedViableReadings._2.filter(i => i._2.isEmpty).toArray
+        val singleAlternatives:Array[(Char, String)] = groupedViableReadings._2.filterNot(i => i._2.isEmpty).map(i => (i._1, i._2.head)).toArray
 
         val unknownPartHiragana: String = singleAlternatives.foldLeft(hiraganaReading) { (z, i) => z.replaceFirst(i._2, "") }
         val unknownKanjis: String = singleAlternatives.foldLeft(s){ (z, i) => z.replaceFirst(i._1.toString, "") }
 
         val oneWay = multipleAlternatives.isEmpty && noAlternatives.isEmpty && unknownKanjis == "" && unknownPartHiragana == ""//added noalternatives
 
-        if (oneWay) singleAlternatives
-        else if (!oneWay && s != unknownKanjis) singleAlternatives ++ reduceUnkownsByReadingsMap(unknownKanjis, unknownPartHiragana, multipleAlternatives)
+        if (oneWay) singleAlternatives.reverse //prev no reverse
+        else if (!oneWay && s != unknownKanjis) (singleAlternatives ++ reduceUnkownsByReadingsMap(unknownKanjis, unknownPartHiragana, multipleAlternatives))
         else singleAlternatives ++ (unknownKanjis ++ noAlternatives.map(_._1).mkString("") zip cut(collapseOnNSyllables(japaneseString.splitIntoSyllables(unknownPartHiragana)).map(_._2), unknownKanjis.size).map(_.mkString(""))).toMap //unknownPartHiragana.extractKanji
       }
       def extractKanjiSyllables(s:String) = japaneseString.splitIntoSyllables(japaneseString.toHiragana(s).diff(japaneseString.extractKana(s)))
@@ -222,11 +223,11 @@ object JapaneseInstances{
 
       val cutGroupings = cut(kanjiSyllablesNFolded, kanjis.size).map(_.mkString(""))
 
-      if (numKanjis == 0) Map[Char, String]()
-      else if (numKanjis == 1) Map(kanjis.head -> kanjiPartInHiragana)
-      else if (numKanjis == kanjiSyllablesNFolded.size) kanjis zip kanjiSyllablesNFolded toMap
-      else if (numKanjis != kanjiSyllablesNFolded.size && !readingsMap.isEmpty) reduceUnkownsByReadingsMap(kanjis, kanjiPartInHiragana, readingsMap)
-      else kanjis.zip(cutGroupings).toMap
+      if (numKanjis == 0) Array[(Char, String)]()
+      else if (numKanjis == 1) Array(kanjis.head -> kanjiPartInHiragana) //missing another parenns?
+      else if (numKanjis == kanjiSyllablesNFolded.size) kanjis.zip(kanjiSyllablesNFolded).toArray
+      else if (numKanjis != kanjiSyllablesNFolded.size && !readingsMap.isEmpty) reduceUnkownsByReadingsMap(kanjis, kanjiPartInHiragana, readingsMap.toArray) //no toArray
+      else kanjis.zip(cutGroupings).toArray
     }
   }
 }
@@ -336,7 +337,7 @@ object Main {
     println(sample5.tokenize().map(furiganaFor(_)).mkString(","))
 
 */
-    val lk = "四月"
+    val lk = "四月は四つの嘘です四人"
     //val lk2 = "時々" //最近
     val lk2 = "月曜日" //最近
     //val lk2 = "猫が好きです" //最近
@@ -388,8 +389,8 @@ object Main {
 
   }
 
-  def furiganaForString(s: String, readingsMap:Map[Char, List[String]] = Map()): Array[Map[Char, String]] = {
-    s.tokenize().map(t => kuromojiToken.furigana(t, readingsMap)).filterNot(_.isEmpty)
+  def furiganaForString(s: String, readingsMap:Map[Char, List[String]] = Map()): Array[(Char, String)] = {
+    s.tokenize().flatMap(t => kuromojiToken.furigana(t, readingsMap))//.filterNot(_.isEmpty)
   }
 
 
