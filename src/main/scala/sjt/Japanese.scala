@@ -289,6 +289,8 @@ object Main {
     val sample3 = "最近"
     val sample4 = "行きます"
     val sample5 = "行"
+
+    println(sample1.splitIntoSyllables)
     /*
     println(sample1.tokenize().mkString(","))
     println(sample2.tokenize().mkString(","))
@@ -316,7 +318,7 @@ object Main {
     println("kr size: " + kanjiReadings.size)
     println(kanjiReadings.mkString(","))
 */
-    val sampleReadings = Map[Char, List[String]]('月' -> List("げつ", "がつ", "つき"), '曜' -> List("よう"), '日' -> List("ひ", "び", "にち", "よう"), '四' -> List("し", "よん"))
+    val sampleReadings = Map[Char, List[String]]('月' -> List("げつ", "がつ", "つき"), '曜' -> List("よう"), '日' -> List("び", "ひ", "にち", "よう"), '四' -> List("し", "よん")) //removed , "び"from hi よう from you
 
     val t = lk.tokenize()
     println("t:" + t.mkString(","))
@@ -334,15 +336,22 @@ object Main {
     println("r3: " + r3)
     println("r4: " + r4)
 
+
+    println("")
+    println("Evaluating " + lk)
+    println("--------------")
     val rs = furiganaForString(lk, sampleReadings)
     val rsIsEmpty = rs.isEmpty
     println("rs is empty: " + rsIsEmpty)
-    if(!rsIsEmpty) println(rs.mkString(",")) else println("nope")
+    if(!rsIsEmpty) println("furigana: " + rs.mkString(",")) else println("nope")
 
+    println("")
+    println("Evaluating " + lk2)
+    println("--------------")
     val rs2 = furiganaForString(lk2, sampleReadings)
     val r2IsEmpty = rs2.isEmpty
     println("rs2 is empty: " + r2IsEmpty)
-    if(!r2IsEmpty) println(rs2.mkString(",")) else println("nope")
+    if(!r2IsEmpty) println("furigana: " + rs2.mkString(",")) else println("nope")
     /*
 
     */
@@ -362,7 +371,8 @@ object Main {
     val kanjis:String = token.getSurface.extractKanji
     val numKanjis:Int = kanjis.size
     val kanjiUnique:Set[Char] = token.getSurface.extractUniqueKanji
-    val kanjiSyllables:List[(Kana, String)] = token.toHiragana().diff(token.extractKana).splitIntoSyllables
+    def extractKanjiSyllables(s:String) = s.toHiragana().diff(s.extractKana).splitIntoSyllables
+    val kanjiSyllables:List[(Kana, String)] = extractKanjiSyllables(token.toHiragana())
 
     val kanjiPartInHiragana:String = token.toHiragana().diff(token.extractKana)
 
@@ -373,33 +383,58 @@ object Main {
     def groupViableReadings(readings:Map[Char, List[String]]):(Map[Char, scala.List[String]], Map[Char, scala.List[String]]) = readings.partition(m => m._2.size > 1)
     def onlyOneWay(grViableReadings: (Map[Char, scala.List[String]], Map[Char, scala.List[String]])):Boolean = grViableReadings._1.isEmpty
 
-    val viableReadings:Map[Char, List[String]] = calculateViableReadings(kanjiPartInHiragana, kanjiUnique, readingsMap)//readingsMap.filter(m => kanjiUnique.contains(m._1)).map(m => m._1 -> m._2.filter(kanjiPartInHiragana.contains(_)))
-    val groupedViableReadings:(Map[Char, scala.List[String]], Map[Char, scala.List[String]]) = groupViableReadings(viableReadings)//viableReadings.partition(m => m._2.size > 1)
-    val oneWay = onlyOneWay(groupedViableReadings) //groupedViableReadings._1.isEmpty
 
-    val kanjiPartInHiraganAvailableForUnviableReadings:String = groupedViableReadings._1.foldLeft(kanjiPartInHiragana){
-      (z,i) => z.replaceFirst(i._2.head, "")
+    def reduceUnkownsByReadingsMap(s:String, hiraganaReading:String, readingsMap:Map[Char, List[String]] = Map()): Map[Char, String] = {
+      println("s: " + s, " readings map: " + readingsMap.mkString(",") + " hiraganaReading: " + hiraganaReading)
+      val viableReadings: Map[Char, List[String]] = calculateViableReadings(hiraganaReading, s.extractUniqueKanji, readingsMap)
+      //find duplicates?
+      val groupedViableReadings = groupViableReadings(viableReadings)
+      val multipleAlternatives = groupedViableReadings._1
+      //println("single alternatives pre-: " + groupedViableReadings._2)
+      val noAlternatives = groupedViableReadings._2.filter(i => i._2.isEmpty)
+      //println("no alternatives: " + noAlternatives)
+      val singleAlternatives = groupedViableReadings._2.filterNot(i => i._2.isEmpty).map(i => (i._1, i._2.head))
+
+
+      val unknownPartHiragana: String = singleAlternatives.foldLeft(hiraganaReading) {
+        (z, i) => z.replaceFirst(i._2, "") //._2
+      }
+      val unknownKanjis: String = singleAlternatives.foldLeft(s){
+        (z, i) => z.replaceFirst(i._1.toString, "") //._2
+      }
+
+      val oneWay = multipleAlternatives.isEmpty && noAlternatives.isEmpty && unknownKanjis == "" && unknownPartHiragana == ""//added noalternatives
+
+      println("unknownKanjis: " + unknownKanjis)
+      println("Viable readings = " + viableReadings.mkString(","))
+      println("groupedViableReadings readings = \n no-read: " + noAlternatives.mkString(",") + "\n single: " + singleAlternatives.mkString(",") + "\n multiple:" + multipleAlternatives.mkString(","))//._2
+      println("oneWay: " + oneWay)
+
+      println("unknownPartHiragana: " + unknownPartHiragana)
+      println("---loop---")
+
+      if (oneWay) singleAlternatives
+      else if (!oneWay && s != unknownKanjis) singleAlternatives ++ reduceUnkownsByReadingsMap(unknownKanjis, unknownPartHiragana, multipleAlternatives)
+      //else if (!oneWay && s == unknownKanjis && !noAlternatives.isEmpty)
+      else {
+        //val unknowable = (unknownKanjis zip cut(collapseOnNSyllables(extractKanjiSyllables(unknownPartHiragana)).map(_._2), unknownKanjis.size).map(_.mkString(""))).toMap //unknownPartHiragana.extractKanji
+        //added no alternatives
+        val unknowable = (unknownKanjis ++ noAlternatives.map(_._1).mkString("") zip cut(collapseOnNSyllables(unknownPartHiragana.splitIntoSyllables).map(_._2), unknownKanjis.size).map(_.mkString(""))).toMap //unknownPartHiragana.extractKanji
+        println("unknowable:" + unknowable)
+        println("---actual loop---")
+        singleAlternatives ++ unknowable
+      }
     }
-    //Have to keep track of kanjis no longer ambigous and also fold until the result string is equal to a previous result
 
-    println("Viable readings = " + viableReadings.mkString(","))
-    println("groupedViableReadings readings = " + groupedViableReadings._2.mkString(","))
-    println("oneWay: " + oneWay)
-
-    println("kanjiPartInHiraganAvailableForUnviableReadings: " + kanjiPartInHiraganAvailableForUnviableReadings)
-
-
+    def distributeKanjiEvenly(s:String) = (s.extractKanji zip cut(collapseOnNSyllables(extractKanjiSyllables(s)).map(_._2), s.extractKanji.size).map(_.mkString(""))).toMap
     val kanjiSyllablesNFolded = collapseOnNSyllables(kanjiSyllables).map(_._2)
 
     val cutGroupings = cut(kanjiSyllablesNFolded, kanjis.size).map(_.mkString(""))
 
-    println("Cut groupings: " + cutGroupings.mkString(","))
-
     if (numKanjis == 0) Map[Char, String]()
     else if (numKanjis == 1) Map(kanjis.head -> kanjiPartInHiragana)
     else if (numKanjis == kanjiSyllablesNFolded.size) kanjis zip kanjiSyllablesNFolded toMap //println("kanjis.size = " + kanjis.size + ", kanjiSyllablesNFolded.size = " + kanjiSyllablesNFolded.size)
-    else if (numKanjis != kanjiSyllables.size && !readingsMap.isEmpty && oneWay) groupedViableReadings._2.mapValues(_.mkString(""))//we have readings + one way
-    //else if (kanjis.size != kanjiSyllables.size && !readingsMap.isEmpty && !oneWay) //we have readings
+    else if (numKanjis != kanjiSyllablesNFolded.size && !readingsMap.isEmpty) reduceUnkownsByReadingsMap(kanjis, kanjiPartInHiragana, readingsMap)//was prev set to kanjiSyllables
     else kanjis.zip(cutGroupings).toMap //New implementation Does it work???
   }
   def collapseOnNSyllables(syllables:List[(Kana,String)]):List[(Kana,String)] = {
