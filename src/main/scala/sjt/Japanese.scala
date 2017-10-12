@@ -7,7 +7,6 @@ import com.atilika.kuromoji.ipadic.Tokenizer
 
 import collection.JavaConverters._
 import scala.annotation.tailrec
-import scala.concurrent.Future
 
 trait Japanese[A] {
   def isHiragana(value: A): Boolean
@@ -33,11 +32,7 @@ trait Japanese[A] {
 
   def containsJapanese(value: A): Boolean = containsHiragana(value) || containsKatakana(value)
   def isLatin(value: A): Boolean
-  /*
-  def toRomaji(value: A, tokenizer:Option[Tokenizer] = None): String
-  def toKatakana(value: A, tokenizer:Option[Tokenizer] = None): String
-  def toHiragana(value: A, tokenizer:Option[Tokenizer] = None): String
-  */
+
   def toRomaji(value: A, tokenizer:Option[Tokenizer] = None): String = transliterate(value, tokenizer).kana.romaji
   def toKatakana(value: A, tokenizer:Option[Tokenizer] = None): String =  transliterate(value, tokenizer).kana.katakana
   def toHiragana(value: A, tokenizer:Option[Tokenizer] = None): String = transliterate(value, tokenizer).kana.hiragana
@@ -69,11 +64,7 @@ object JapaneseInstances{
     def isHiraganaExtension(value:Char):Boolean = Map('ゃ' -> 'a', 'ゅ'->'u', 'ょ'->'o').get(value).isDefined
     def isKatakanaExtension(value:Char):Boolean = Map('ャ' -> 'a', 'ュ' -> 'u', 'ョ' -> 'o').get(value).isDefined
     def isExtension(value:Char):Boolean = isHiraganaExtension(value) || isKatakanaExtension(value)
-/*
-    override def toRomaji(value: Char, tokenizer:Option[Tokenizer] = None): String = Kana.toRomaji(splitIntoSyllables(value))
-    override def toKatakana(value: Char, tokenizer:Option[Tokenizer] = None): String = if (value == 'っ') "ッ" else Kana.toKatakana(splitIntoSyllables(value))
-    override def toHiragana(value: Char, tokenizer:Option[Tokenizer] = None): String = if (value == 'ッ') "っ" else Kana.toHiragana(splitIntoSyllables(value))
-*/
+
     def transliterate(value: Char, tokenizer: Option[Tokenizer] = Some(Kana.tokenizer)): Transliteration = {
       Transliteration(value.toString, Kana(if (value == 'ッ') "っ" else Kana.toHiragana(splitIntoSyllables(value)),
                                            if (value == 'っ') "ッ" else Kana.toKatakana(splitIntoSyllables(value)),
@@ -111,25 +102,7 @@ object JapaneseInstances{
       if (input.isEmpty) l
       else splitIntoSyllables(input.drop(nS._2.length), nS :: l)
     }
-    /*
-        def toRomaji(value: String, tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):String = {
-          if (!containsKanji(value)) Kana.toRomaji(splitIntoSyllables(value))
-          else Kana.toRomaji(splitIntoSyllables(tokensToRomajiString(tokenizer.get.tokenize(value).asScala.toList)))
-        }
-        def toHiragana(value: String, tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):String = {
-          if (!containsKanji(value)) Kana.toHiragana(splitIntoSyllables(value))
-          else Kana.toHiragana(splitIntoSyllables(tokensToHiraganaString(tokenizer.get.tokenize(value).asScala.toList)))
-        }
-        def toKatakana(value: String, tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):String = {
-          if (!containsKanji(value)) Kana.toKatakana(splitIntoSyllables(value))
-          else Kana.toKatakana(splitIntoSyllables(tokensToKatakanaString(tokenizer.get.tokenize(value).asScala.toList))).tail
-        }
-        */
-    /*
-    def toRomaji(value: String, tokenizer: Option[Tokenizer] = Some(Kana.tokenizer)): String = transliterate(value, tokenizer).kana.romaji
-    def toHiragana(value: String, tokenizer: Option[Tokenizer] = Some(Kana.tokenizer)): String = transliterate(value, tokenizer).kana.hiragana
-    def toKatakana(value: String, tokenizer: Option[Tokenizer] = Some(Kana.tokenizer)): String = transliterate(value, tokenizer).kana.katakana
-*/
+
     override def transliterate(value: String, tokenizer: Option[Tokenizer] = Some(Kana.tokenizer)): Transliteration = {
       if (!containsKanji(value)) {
         val syllables = splitIntoSyllables(value)
@@ -143,11 +116,6 @@ object JapaneseInstances{
     }
     override def tokenize(value:String, tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):Array[Token] = tokenizer.getOrElse(Kana.tokenizer).tokenize(value).asScala.toArray
 
-    /*
-    def okurigana(value:String, tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):List[(String, String)] = {
-      tokenizer.get.tokenize(value).asScala.toList.foldLeft(List[(String, String)]())((l, t) => if (isKanji(t.getSurface())) l.::(t.getSurface(), toHiragana(t.getReading())) else l).reverse //Should maybe separate chars?
-    }
-    */
     private def hiraganaSpacing(t:Token) = ""
     private def katakanaSpacing(t:Token) = if(Kana.isTranslateableSymbol(t.getSurface())) "" else "・"
     private def romajiSpacing(t:Token) = if(t.getAllFeaturesArray()(1) == "接続助詞" || Kana.isTranslateableSymbol(t.getSurface())) "" else " "
@@ -174,11 +142,7 @@ object JapaneseInstances{
     def containsKatakana(value: Token): Boolean = japaneseString.containsKatakana(value.getSurface)
     def containsKanji(value: Token): Boolean = japaneseString.containsKanji(value.getSurface)
     def isLatin(value: Token): Boolean = japaneseString.isLatin(value.getSurface)
-    /*
-    def toRomaji(value: Token, tokenizer:Option[Tokenizer] = None): String = Kana.toRomaji(splitIntoSyllables(value))
-    def toKatakana(value: Token, tokenizer:Option[Tokenizer] = None): String = Kana.toKatakana(splitIntoSyllables(value))
-    def toHiragana(value: Token, tokenizer:Option[Tokenizer] = None): String = Kana.toHiragana(splitIntoSyllables(value))
-*/
+
     override def splitIntoSyllables(input: Token, l: List[(Kana, String)] = Nil): List[(Kana, String)] = japaneseString.splitIntoSyllables(tokenToString(input))
     private def tokenToString(input:Token): String = if (input.getPronunciation != "*") input.getPronunciation else input.getSurface
     override def extractHiragana(value: Token):String = japaneseString.extractHiragana(value.getSurface)
@@ -354,14 +318,6 @@ object Main {
     val r2IsEmpty = rs2.isEmpty
     println("rs2 is empty: " + r2IsEmpty)
     if(!r2IsEmpty) println("furigana: " + rs2.mkString(",")) else println("nope")
-    /*
-
-    */
-    /*
-    val kanjiSyllables = lk.tokenize().head.toHiragana().diff(lk.tokenize().head.extractKana).splitIntoSyllables
-    println(kanjiSyllables)
-    */
-
 
   }
 
@@ -431,8 +387,8 @@ object Main {
 
     if (numKanjis == 0) Map[Char, String]()
     else if (numKanjis == 1) Map(kanjis.head -> kanjiPartInHiragana)
-    else if (numKanjis == kanjiSyllablesNFolded.size) kanjis zip kanjiSyllablesNFolded toMap //println("kanjis.size = " + kanjis.size + ", kanjiSyllablesNFolded.size = " + kanjiSyllablesNFolded.size)
-    else if (numKanjis != kanjiSyllablesNFolded.size && !readingsMap.isEmpty) reduceUnkownsByReadingsMap(kanjis, kanjiPartInHiragana, readingsMap)//was prev set to kanjiSyllables
-    else kanjis.zip(cutGroupings).toMap //New implementation Does it work???
+    else if (numKanjis == kanjiSyllablesNFolded.size) kanjis zip kanjiSyllablesNFolded toMap
+    else if (numKanjis != kanjiSyllablesNFolded.size && !readingsMap.isEmpty) reduceUnkownsByReadingsMap(kanjis, kanjiPartInHiragana, readingsMap)
+    else kanjis.zip(cutGroupings).toMap
   }
  }
