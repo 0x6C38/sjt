@@ -41,6 +41,8 @@ trait Japanese[A] {
   def splitIntoSyllables(input:A, l: List[(Kana, String)] = Nil): List[(Kana,String)]
 
   def tokenize(value:A, tokenizer:Option[Tokenizer] = None):Array[Token]
+
+  def furigana(value:A, readingsMap:Map[Char, List[String]] = Map(), tokenizer:Option[Tokenizer] = None):Array[(Char, String)]
 }
 
 object JapaneseInstances{
@@ -82,6 +84,10 @@ object JapaneseInstances{
     override def extractUniqueKanji(value:Char):Set[Char] = if (isKanji(value)) Set[Char](value) else Set.empty
 
     override def tokenize(value: Char, tokenizer: Option[Tokenizer]) = tokenizer.getOrElse(Kana.tokenizer).tokenize(value.toString).asScala.toArray
+
+    //override def furigana(value: Char, readingsMap: Map[Char, List[String]], tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)) = tokenize(value, tokenizer).flatMap(t => kuromojiToken.furigana(t, readingsMap))
+    //Can it even be implemented for a single char?
+    override def furigana(value: Char, readingsMap: Map[Char, List[String]], tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)) = Array((value, value.toString))
   }
 
   implicit val japaneseString = new Japanese[String] {
@@ -116,6 +122,9 @@ object JapaneseInstances{
     }
     override def tokenize(value:String, tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):Array[Token] = tokenizer.getOrElse(Kana.tokenizer).tokenize(value).asScala.toArray
 
+    //Needs to avoid circular reference to kuromoji token.
+    override def furigana(value: String, readingsMap: Map[Char, List[String]], tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)) = tokenize(value, tokenizer).flatMap(t => kuromojiToken.furigana(t, readingsMap))
+
     private def hiraganaSpacing(t:Token) = ""
     private def katakanaSpacing(t:Token) = if(Kana.isTranslateableSymbol(t.getSurface())) "" else "・"
     private def romajiSpacing(t:Token) = if(t.getAllFeaturesArray()(1) == "接続助詞" || Kana.isTranslateableSymbol(t.getSurface())) "" else " "
@@ -131,6 +140,7 @@ object JapaneseInstances{
     override def extractUniqueHiragana(value: String) = value.toCharArray.filter(c => japaneseChar.isHiragana(c)).toSet
     override def extractUniqueKatakana(value: String) = value.toCharArray.filter(c => japaneseChar.isKatakana(c)).toSet
     override def extractUniqueKanji(value:String):Set[Char] = value.toCharArray.filter(c => japaneseChar.isKanji(c)).toSet
+
   }
   implicit val kuromojiToken = new Japanese[Token] {
     def isHiragana(value: Token): Boolean = japaneseString.isHiragana(value.getSurface)
@@ -162,7 +172,7 @@ object JapaneseInstances{
 
     override def tokenize(value: Token, tokenizer: Option[Tokenizer]):Array[Token] = Array(value)
 
-    def furigana(token:Token, readingsMap:Map[Char, List[String]] = Map()):Array[(Char, String)] = {
+    override def furigana(token:Token, readingsMap:Map[Char, List[String]] = Map(), tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):Array[(Char, String)] = {
       def collapseOnNSyllables(syllables:List[(Kana,String)]):List[(Kana,String)] = {
         //val syllablesWithN = syllables.zipWithIndex.filter(_._1._1.hiragana == "ん")
         //val preSyllablesWithN = syllablesWithN.map(s => if (s._2 > 0) s._2 - 1 else s._2)
@@ -258,7 +268,8 @@ object Japanese {
   def toHiragana[A](input:A)(implicit p: Japanese[A]): String = p.toHiragana(input)
   def splitIntoSyllables[A](input:A)(implicit p: Japanese[A]):List[(Kana, String)] = p.splitIntoSyllables(input)
 
-  def tokenize[A](input:A)(implicit p: Japanese[A]):Array[Token] = p.tokenize(input)
+  def tokenize[A](input:A)(implicit p: Japanese[A]):Array[Token] = p.tokenize(input)//missing tokenizer??
+  def furigana[A](input:A)(implicit p: Japanese[A]):Array[(Char, String)] = p.furigana(input) //missing tokenizer??
 }
 
 object JapaneseSyntax {
@@ -294,6 +305,9 @@ object JapaneseSyntax {
     def splitIntoSyllables(implicit p: Japanese[A]):List[(Kana, String)] = p.splitIntoSyllables(value)
 
     def tokenize(t:Tokenizer = null)(implicit p: Japanese[A]):Array[Token] = if (t != null) p.tokenize(value, Some(t)) else p.tokenize(value)
+
+    def furigana(readingsMap:Map[Char, List[String]] = Map(), t:Tokenizer = null)(implicit p: Japanese[A]):Array[(Char, String)] = if (t != null) p.furigana(value, readingsMap, Some(t)) else p.furigana(value, readingsMap)
+
   }
 }
 sealed trait SpacingConfig{
@@ -312,7 +326,6 @@ object Main {
   import JapaneseSyntax._
   def main(args: Array[String]): Unit = {
 
-    //TODO: Add furigana function (checkout drafts worksheet)
     //TODO: Rename Kana fields and privitize them if necessary
     //TODO: Command line interaction
 
@@ -374,7 +387,8 @@ object Main {
     println("")
     println("Evaluating " + lk)
     println("--------------")
-    val rs = furiganaForString(lk, sampleReadings)
+    //val rs = furiganaForString(lk, sampleReadings)
+    val rs = lk.furigana(sampleReadings)
     val rsIsEmpty = rs.isEmpty
     println("rs is empty: " + rsIsEmpty)
     if(!rsIsEmpty) println("furigana: " + rs.mkString(",")) else println("nope")
@@ -382,16 +396,17 @@ object Main {
     println("")
     println("Evaluating " + lk2)
     println("--------------")
-    val rs2 = furiganaForString(lk2, sampleReadings)
+    //val rs2 = furiganaForString(lk2, sampleReadings)
+    val rs2 = lk2.furigana(sampleReadings)
     val r2IsEmpty = rs2.isEmpty
     println("rs2 is empty: " + r2IsEmpty)
     if(!r2IsEmpty) println("furigana: " + rs2.mkString(",")) else println("nope")
 
   }
 
-  def furiganaForString(s: String, readingsMap:Map[Char, List[String]] = Map()): Array[(Char, String)] = {
-    s.tokenize().flatMap(t => kuromojiToken.furigana(t, readingsMap))//.filterNot(_.isEmpty)
-  }
+//  def furiganaForString(s: String, readingsMap:Map[Char, List[String]] = Map()): Array[(Char, String)] = {
+//    s.tokenize().flatMap(t => kuromojiToken.furigana(t, readingsMap))//.filterNot(_.isEmpty)
+//  }
 
 
  }
