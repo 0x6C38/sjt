@@ -88,6 +88,7 @@ object JapaneseInstances{
     //override def furigana(value: Char, readingsMap: Map[Char, List[String]], tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)) = tokenize(value, tokenizer).flatMap(t => kuromojiToken.furigana(t, readingsMap))
     //Can it even be implemented for a single char?
     override def furigana(value: Char, readingsMap: Map[Char, List[String]], tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)) = Array((value, value.toString))
+
   }
 
   implicit val japaneseString = new Japanese[String] {
@@ -122,13 +123,12 @@ object JapaneseInstances{
     }
     override def tokenize(value:String, tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):Array[Token] = tokenizer.getOrElse(Kana.tokenizer).tokenize(value).asScala.toArray
 
-    //Needs to avoid circular reference to kuromoji token.
-    override def furigana(value: String, readingsMap: Map[Char, List[String]], tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)) = tokenize(value, tokenizer).flatMap(t => kuromojiToken.furigana(t, readingsMap))
 
     private def hiraganaSpacing(t:Token) = ""
     private def katakanaSpacing(t:Token) = if(Kana.isTranslateableSymbol(t.getSurface())) "" else "・"
     private def romajiSpacing(t:Token) = if(t.getAllFeaturesArray()(1) == "接続助詞" || Kana.isTranslateableSymbol(t.getSurface())) "" else " "
 
+    //missleading function names, doesn't actually transliterate
     private def tokensToRomajiString(ts:List[Token]) = ts.foldLeft(""){(r,t:Token) => r + romajiSpacing(t) +  (if (t.getPronunciation != "*") t.getPronunciation else t.getReading)}.trim
     private def tokensToHiraganaString(ts:List[Token]) = ts.foldLeft(""){(r,t:Token) => r + hiraganaSpacing(t) +  t.getReading}.trim
     private def tokensToKatakanaString(ts:List[Token]) = ts.foldLeft(""){(r,t:Token) => r + katakanaSpacing(t) +  (if (t.getPronunciation != "*") t.getPronunciation else t.getReading)}.trim
@@ -141,6 +141,77 @@ object JapaneseInstances{
     override def extractUniqueKatakana(value: String) = value.toCharArray.filter(c => japaneseChar.isKatakana(c)).toSet
     override def extractUniqueKanji(value:String):Set[Char] = value.toCharArray.filter(c => japaneseChar.isKanji(c)).toSet
 
+    //Needs to avoid circular reference to kuromoji token.
+    override def furigana(value: String, readingsMap: Map[Char, List[String]], tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)) = tokenize(value, tokenizer).flatMap(t => tokenToFurigana(t, readingsMap))
+    def tokenToFurigana(token:Token, readingsMap:Map[Char, List[String]] = Map(), tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):Array[(Char, String)] = {
+      def collapseOnNSyllables(syllables:List[(Kana,String)]):List[(Kana,String)] = {
+        //val syllablesWithN = syllables.zipWithIndex.filter(_._1._1.hiragana == "ん")
+        //val preSyllablesWithN = syllablesWithN.map(s => if (s._2 > 0) s._2 - 1 else s._2)
+        syllables.reverse.foldLeft(List[(Kana,String)]()){
+          (l:List[(Kana,String)],syllable:(Kana,String)) =>
+            if (syllable._1.hiragana == "ん" && !l.isEmpty){
+              val last = if (l.headOption.isDefined) l.head._1 else Kana("","","") //PROBLEM IS HERE
+              (Kana(last.hiragana + syllable._1.hiragana, last.katakana + syllable._1.katakana, last.romaji + syllable._1.romaji)
+                , last.hiragana + syllable._2)::l.tail
+              //val result:Int = if (!l.isEmpty) (fusedKana, syllable._2)::l.tail else (fusedKana, syllable._2)::l
+            } else syllable :: l
+        }.reverse
+      }
+      def cut[A](xs: Seq[A], n: Int):Vector[Seq[A]] = {
+        val m = xs.length
+        val targets = (0 to n).map{x => math.round((x.toDouble*m)/n).toInt}
+        def snip(xs: Seq[A], ns: Seq[Int], got: Vector[Seq[A]]): Vector[Seq[A]] = {
+          if (ns.length<2) got
+          else {
+            val (i,j) = (ns.head, ns.tail.head)
+            snip(xs.drop(j-i), ns.tail, got :+ xs.take(j-i))
+          }
+        }
+        snip(xs, targets, Vector.empty)
+      }
+      def reduceUnkownsByReadingsMap(s:String, hiraganaReading:String, readingsMap:Array[(Char, List[String])] = Array()): Array[(Char, String)] = {
+        def calculateViableReadings(reading: String, kanjisInText: Set[Char], readingsMap: Array[(Char, List[String])]): Array[(Char, List[String])] = readingsMap.filter(m => kanjisInText.contains(m._1)).map(m => m._1 -> m._2.filter(reading.contains(_)))
+        def groupViableReadings(readings: Array[(Char, List[String])]): (Array[(Char, List[String])], Array[(Char, List[String])]) = readings.partition(m => m._2.size > 1)
+        def onlyOneWay(grViableReadings: (Map[Char, scala.List[String]], Map[Char, scala.List[String]])): Boolean = grViableReadings._1.isEmpty
+
+        val viableReadings: Array[(Char, List[String])] = calculateViableReadings(hiraganaReading, extractUniqueKanji(s), readingsMap)
+
+        val groupedViableReadings:(Array[(Char, List[String])], Array[(Char, List[String])]) = groupViableReadings(viableReadings) //find duplicates?
+        val multipleAlternatives:Array[(Char, List[String])] = groupedViableReadings._1
+        //val test:Long = groupedViableReadings._2
+        val noAlternatives:Array[(Char, List[String])] = groupedViableReadings._2.filter(i => i._2.isEmpty).toArray
+        val singleAlternatives:Array[(Char, String)] = groupedViableReadings._2.filterNot(i => i._2.isEmpty).map(i => (i._1, i._2.head)).toArray
+
+        val unknownPartHiragana: String = singleAlternatives.foldLeft(hiraganaReading) { (z, i) => z.replaceFirst(i._2, "") }
+        val unknownKanjis: String = singleAlternatives.foldLeft(s){ (z, i) => z.replaceFirst(i._1.toString, "") }
+
+        val oneWay = multipleAlternatives.isEmpty && noAlternatives.isEmpty && unknownKanjis == "" && unknownPartHiragana == ""//added noalternatives
+
+        if (oneWay) singleAlternatives.reverse //prev no reverse
+        else if (!oneWay && s != unknownKanjis) (singleAlternatives ++ reduceUnkownsByReadingsMap(unknownKanjis, unknownPartHiragana, multipleAlternatives))
+        else singleAlternatives ++ (unknownKanjis ++ noAlternatives.map(_._1).mkString("") zip cut(collapseOnNSyllables(splitIntoSyllables(unknownPartHiragana)).map(_._2), unknownKanjis.size).map(_.mkString(""))).toMap //unknownPartHiragana.extractKanji
+      }
+      def extractKanjiSyllables(s:String) = splitIntoSyllables(toHiragana(s).diff(extractKana(s)))
+
+      val kanjis:String = extractKanji(token.getSurface)
+      val numKanjis:Int = kanjis.size
+      val kanjiUnique:Set[Char] = extractUniqueKanji(token.getSurface)
+      val kanjiSyllables:List[(Kana, String)] = extractKanjiSyllables(tokensToHiraganaString(List(token)))
+
+      val tokenToHStr = Kana.toHiragana(splitIntoSyllables(tokensToHiraganaString(List(token))))
+      val diff = extractKana(token.getSurface)
+      val kanjiPartInHiragana:String = Kana.toHiragana(splitIntoSyllables(tokensToHiraganaString(List(token)))).diff(extractKana(token.getSurface)) //potencial bug if surface isn't in hiragana
+
+      val kanjiSyllablesNFolded = collapseOnNSyllables(kanjiSyllables).map(_._2)
+
+      val cutGroupings = cut(kanjiSyllablesNFolded, kanjis.size).map(_.mkString(""))
+
+      if (numKanjis == 0) Array[(Char, String)]()
+      else if (numKanjis == 1) Array(kanjis.head -> kanjiPartInHiragana) //missing another parenns?
+      else if (numKanjis == kanjiSyllablesNFolded.size) kanjis.zip(kanjiSyllablesNFolded).toArray
+      else if (numKanjis != kanjiSyllablesNFolded.size && !readingsMap.isEmpty) reduceUnkownsByReadingsMap(kanjis, kanjiPartInHiragana, readingsMap.toArray) //no toArray
+      else kanjis.zip(cutGroupings).toArray
+    }
   }
   implicit val kuromojiToken = new Japanese[Token] {
     def isHiragana(value: Token): Boolean = japaneseString.isHiragana(value.getSurface)
@@ -172,73 +243,75 @@ object JapaneseInstances{
 
     override def tokenize(value: Token, tokenizer: Option[Tokenizer]):Array[Token] = Array(value)
 
-    override def furigana(token:Token, readingsMap:Map[Char, List[String]] = Map(), tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):Array[(Char, String)] = {
-      def collapseOnNSyllables(syllables:List[(Kana,String)]):List[(Kana,String)] = {
-        //val syllablesWithN = syllables.zipWithIndex.filter(_._1._1.hiragana == "ん")
-        //val preSyllablesWithN = syllablesWithN.map(s => if (s._2 > 0) s._2 - 1 else s._2)
-        syllables.reverse.foldLeft(List[(Kana,String)]()){
-          (l:List[(Kana,String)],syllable:(Kana,String)) =>
-            if (syllable._1.hiragana == "ん" && !l.isEmpty){
-              val last = if (l.headOption.isDefined) l.head._1 else Kana("","","") //PROBLEM IS HERE
-              (Kana(last.hiragana + syllable._1.hiragana, last.katakana + syllable._1.katakana, last.romaji + syllable._1.romaji)
-                , last.hiragana + syllable._2)::l.tail
-              //val result:Int = if (!l.isEmpty) (fusedKana, syllable._2)::l.tail else (fusedKana, syllable._2)::l
-            } else syllable :: l
-        }.reverse
-      }
-      def cut[A](xs: Seq[A], n: Int):Vector[Seq[A]] = {
-        val m = xs.length
-        val targets = (0 to n).map{x => math.round((x.toDouble*m)/n).toInt}
-        def snip(xs: Seq[A], ns: Seq[Int], got: Vector[Seq[A]]): Vector[Seq[A]] = {
-          if (ns.length<2) got
-          else {
-            val (i,j) = (ns.head, ns.tail.head)
-            snip(xs.drop(j-i), ns.tail, got :+ xs.take(j-i))
-          }
-        }
-        snip(xs, targets, Vector.empty)
-      }
-      def reduceUnkownsByReadingsMap(s:String, hiraganaReading:String, readingsMap:Array[(Char, List[String])] = Array()): Array[(Char, String)] = {
-        def calculateViableReadings(reading: String, kanjisInText: Set[Char], readingsMap: Array[(Char, List[String])]): Array[(Char, List[String])] = readingsMap.filter(m => kanjisInText.contains(m._1)).map(m => m._1 -> m._2.filter(reading.contains(_)))
-        def groupViableReadings(readings: Array[(Char, List[String])]): (Array[(Char, List[String])], Array[(Char, List[String])]) = readings.partition(m => m._2.size > 1)
-        def onlyOneWay(grViableReadings: (Map[Char, scala.List[String]], Map[Char, scala.List[String]])): Boolean = grViableReadings._1.isEmpty
+    override def furigana(token:Token, readingsMap:Map[Char, List[String]] = Map(), tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):Array[(Char, String)] = japaneseString.tokenToFurigana(token,readingsMap,tokenizer)
 
-        val viableReadings: Array[(Char, List[String])] = calculateViableReadings(hiraganaReading, japaneseString.extractUniqueKanji(s), readingsMap)
-
-        val groupedViableReadings:(Array[(Char, List[String])], Array[(Char, List[String])]) = groupViableReadings(viableReadings) //find duplicates?
-        val multipleAlternatives:Array[(Char, List[String])] = groupedViableReadings._1
-        //val test:Long = groupedViableReadings._2
-        val noAlternatives:Array[(Char, List[String])] = groupedViableReadings._2.filter(i => i._2.isEmpty).toArray
-        val singleAlternatives:Array[(Char, String)] = groupedViableReadings._2.filterNot(i => i._2.isEmpty).map(i => (i._1, i._2.head)).toArray
-
-        val unknownPartHiragana: String = singleAlternatives.foldLeft(hiraganaReading) { (z, i) => z.replaceFirst(i._2, "") }
-        val unknownKanjis: String = singleAlternatives.foldLeft(s){ (z, i) => z.replaceFirst(i._1.toString, "") }
-
-        val oneWay = multipleAlternatives.isEmpty && noAlternatives.isEmpty && unknownKanjis == "" && unknownPartHiragana == ""//added noalternatives
-
-        if (oneWay) singleAlternatives.reverse //prev no reverse
-        else if (!oneWay && s != unknownKanjis) (singleAlternatives ++ reduceUnkownsByReadingsMap(unknownKanjis, unknownPartHiragana, multipleAlternatives))
-        else singleAlternatives ++ (unknownKanjis ++ noAlternatives.map(_._1).mkString("") zip cut(collapseOnNSyllables(japaneseString.splitIntoSyllables(unknownPartHiragana)).map(_._2), unknownKanjis.size).map(_.mkString(""))).toMap //unknownPartHiragana.extractKanji
-      }
-      def extractKanjiSyllables(s:String) = japaneseString.splitIntoSyllables(japaneseString.toHiragana(s).diff(japaneseString.extractKana(s)))
-
-      val kanjis:String = extractKanji(token)
-      val numKanjis:Int = kanjis.size
-      val kanjiUnique:Set[Char] = extractUniqueKanji(token)
-      val kanjiSyllables:List[(Kana, String)] = extractKanjiSyllables(toHiragana(token))
-
-      val kanjiPartInHiragana:String = toHiragana(token).diff(extractKana(token))
-
-      val kanjiSyllablesNFolded = collapseOnNSyllables(kanjiSyllables).map(_._2)
-
-      val cutGroupings = cut(kanjiSyllablesNFolded, kanjis.size).map(_.mkString(""))
-
-      if (numKanjis == 0) Array[(Char, String)]()
-      else if (numKanjis == 1) Array(kanjis.head -> kanjiPartInHiragana) //missing another parenns?
-      else if (numKanjis == kanjiSyllablesNFolded.size) kanjis.zip(kanjiSyllablesNFolded).toArray
-      else if (numKanjis != kanjiSyllablesNFolded.size && !readingsMap.isEmpty) reduceUnkownsByReadingsMap(kanjis, kanjiPartInHiragana, readingsMap.toArray) //no toArray
-      else kanjis.zip(cutGroupings).toArray
-    }
+//    override def furigana(token:Token, readingsMap:Map[Char, List[String]] = Map(), tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):Array[(Char, String)] = {
+//      def collapseOnNSyllables(syllables:List[(Kana,String)]):List[(Kana,String)] = {
+//        //val syllablesWithN = syllables.zipWithIndex.filter(_._1._1.hiragana == "ん")
+//        //val preSyllablesWithN = syllablesWithN.map(s => if (s._2 > 0) s._2 - 1 else s._2)
+//        syllables.reverse.foldLeft(List[(Kana,String)]()){
+//          (l:List[(Kana,String)],syllable:(Kana,String)) =>
+//            if (syllable._1.hiragana == "ん" && !l.isEmpty){
+//              val last = if (l.headOption.isDefined) l.head._1 else Kana("","","") //PROBLEM IS HERE
+//              (Kana(last.hiragana + syllable._1.hiragana, last.katakana + syllable._1.katakana, last.romaji + syllable._1.romaji)
+//                , last.hiragana + syllable._2)::l.tail
+//              //val result:Int = if (!l.isEmpty) (fusedKana, syllable._2)::l.tail else (fusedKana, syllable._2)::l
+//            } else syllable :: l
+//        }.reverse
+//      }
+//      def cut[A](xs: Seq[A], n: Int):Vector[Seq[A]] = {
+//        val m = xs.length
+//        val targets = (0 to n).map{x => math.round((x.toDouble*m)/n).toInt}
+//        def snip(xs: Seq[A], ns: Seq[Int], got: Vector[Seq[A]]): Vector[Seq[A]] = {
+//          if (ns.length<2) got
+//          else {
+//            val (i,j) = (ns.head, ns.tail.head)
+//            snip(xs.drop(j-i), ns.tail, got :+ xs.take(j-i))
+//          }
+//        }
+//        snip(xs, targets, Vector.empty)
+//      }
+//      def reduceUnkownsByReadingsMap(s:String, hiraganaReading:String, readingsMap:Array[(Char, List[String])] = Array()): Array[(Char, String)] = {
+//        def calculateViableReadings(reading: String, kanjisInText: Set[Char], readingsMap: Array[(Char, List[String])]): Array[(Char, List[String])] = readingsMap.filter(m => kanjisInText.contains(m._1)).map(m => m._1 -> m._2.filter(reading.contains(_)))
+//        def groupViableReadings(readings: Array[(Char, List[String])]): (Array[(Char, List[String])], Array[(Char, List[String])]) = readings.partition(m => m._2.size > 1)
+//        def onlyOneWay(grViableReadings: (Map[Char, scala.List[String]], Map[Char, scala.List[String]])): Boolean = grViableReadings._1.isEmpty
+//
+//        val viableReadings: Array[(Char, List[String])] = calculateViableReadings(hiraganaReading, japaneseString.extractUniqueKanji(s), readingsMap)
+//
+//        val groupedViableReadings:(Array[(Char, List[String])], Array[(Char, List[String])]) = groupViableReadings(viableReadings) //find duplicates?
+//        val multipleAlternatives:Array[(Char, List[String])] = groupedViableReadings._1
+//        //val test:Long = groupedViableReadings._2
+//        val noAlternatives:Array[(Char, List[String])] = groupedViableReadings._2.filter(i => i._2.isEmpty).toArray
+//        val singleAlternatives:Array[(Char, String)] = groupedViableReadings._2.filterNot(i => i._2.isEmpty).map(i => (i._1, i._2.head)).toArray
+//
+//        val unknownPartHiragana: String = singleAlternatives.foldLeft(hiraganaReading) { (z, i) => z.replaceFirst(i._2, "") }
+//        val unknownKanjis: String = singleAlternatives.foldLeft(s){ (z, i) => z.replaceFirst(i._1.toString, "") }
+//
+//        val oneWay = multipleAlternatives.isEmpty && noAlternatives.isEmpty && unknownKanjis == "" && unknownPartHiragana == ""//added noalternatives
+//
+//        if (oneWay) singleAlternatives.reverse //prev no reverse
+//        else if (!oneWay && s != unknownKanjis) (singleAlternatives ++ reduceUnkownsByReadingsMap(unknownKanjis, unknownPartHiragana, multipleAlternatives))
+//        else singleAlternatives ++ (unknownKanjis ++ noAlternatives.map(_._1).mkString("") zip cut(collapseOnNSyllables(japaneseString.splitIntoSyllables(unknownPartHiragana)).map(_._2), unknownKanjis.size).map(_.mkString(""))).toMap //unknownPartHiragana.extractKanji
+//      }
+//      def extractKanjiSyllables(s:String) = japaneseString.splitIntoSyllables(japaneseString.toHiragana(s).diff(japaneseString.extractKana(s)))
+//
+//      val kanjis:String = extractKanji(token)
+//      val numKanjis:Int = kanjis.size
+//      val kanjiUnique:Set[Char] = extractUniqueKanji(token)
+//      val kanjiSyllables:List[(Kana, String)] = extractKanjiSyllables(toHiragana(token))
+//
+//      val kanjiPartInHiragana:String = toHiragana(token).diff(extractKana(token))
+//
+//      val kanjiSyllablesNFolded = collapseOnNSyllables(kanjiSyllables).map(_._2)
+//
+//      val cutGroupings = cut(kanjiSyllablesNFolded, kanjis.size).map(_.mkString(""))
+//
+//      if (numKanjis == 0) Array[(Char, String)]()
+//      else if (numKanjis == 1) Array(kanjis.head -> kanjiPartInHiragana) //missing another parenns?
+//      else if (numKanjis == kanjiSyllablesNFolded.size) kanjis.zip(kanjiSyllablesNFolded).toArray
+//      else if (numKanjis != kanjiSyllablesNFolded.size && !readingsMap.isEmpty) reduceUnkownsByReadingsMap(kanjis, kanjiPartInHiragana, readingsMap.toArray) //no toArray
+//      else kanjis.zip(cutGroupings).toArray
+//    }
   }
 }
 object Japanese {
@@ -326,6 +399,7 @@ object Main {
   import JapaneseSyntax._
   def main(args: Array[String]): Unit = {
 
+    //TODO: Refactor messy type-class instances dependencies
     //TODO: Rename Kana fields and privitize them if necessary
     //TODO: Command line interaction
 
@@ -336,6 +410,8 @@ object Main {
     val sample5 = "行"
 
     println(sample1.splitIntoSyllables)
+
+    println("transliterated sample1: " + sample1.transliterate())
     /*
     println(sample1.tokenize().mkString(","))
     println(sample2.tokenize().mkString(","))
