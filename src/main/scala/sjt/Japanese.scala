@@ -236,7 +236,7 @@ object JapaneseInstances{
 
     override def transliterate(value: Token, tokenizer: Option[Tokenizer] = Some(Kana.tokenizer)): Transliteration = {
       val syllables = splitIntoSyllables(value)
-      Transliteration(tokenToString(value), Kana(Kana.toHiragana(syllables),
+      Transliteration(value.getSurface, Kana(Kana.toHiragana(syllables), //tokenToString(value)
                                                  Kana.toKatakana(syllables),
                                                   Kana.toRomaji(syllables)))
     }
