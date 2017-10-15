@@ -8,54 +8,17 @@ import JapaneseInstances._
 import JapaneseSyntax._
 
 val cachedTokenizer = new Tokenizer()
-val nums = (1 to 6).toArray
-println(nums.sliding(2,2).toList.mkString(","))
-
-val sample = "猫が好きです"
+val sample1 = "猫が好きです"
 val sample2 = "図書館"
 val sample3 = "最近"
 val sample4 = "行きます"
 val sample5 = "行"
+val sample6 = "四月は四つの嘘です四人"
+val sample7 = "月曜日" //最近
+val sample8 = "時々" //最近
 
-def collapseOnNSyllables(syllables:List[(Kana,String)]):List[(Kana,String)] = {
-  val syllablesWithN = syllables.zipWithIndex.filter(_._1._1.hiragana == "ん")
-  val preSyllablesWithN = syllablesWithN.map(s => if (s._2 > 0) s._2 - 1 else s._2)
-  //syllables.foldLeft(List[(Kana,String)]())((z, i) => )
-  syllables.reverse.foldLeft(List[(Kana,String)]()){
-    (l:List[(Kana,String)],syllable:(Kana,String)) =>
-      if (syllable._1.hiragana == "ん"){
-        val last = l.head._1
-        (Kana(last.hiragana + syllable._1.hiragana, last.katakana + syllable._1.katakana, last.romaji + syllable._1.romaji)
-          , syllable._2)::l.tail
-      } else syllable :: l
-  }
-}
+val samples = Array(sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8)
 
-//collapseOnNSyllables(sample)
-sample3.toHiragana(cachedTokenizer)
-sample3.toHiragana(cachedTokenizer).splitIntoSyllables.reverse
-collapseOnNSyllables(sample3.toHiragana(cachedTokenizer).splitIntoSyllables)
+val sampleReadings = Map[Char, List[String]]('月' -> List("げつ", "がつ", "つき"), '曜' -> List("よう"), '日' -> List("び", "ひ", "にち", "よう"), '四' -> List("し", "よん")) //removed , "び"from hi よう from you
 
-def furiganaFor(token:Token, readingsMap:Map[Char, List[String]] = Map()):Map[Char, String] = {
-  val kanjis = token.getSurface.extractKanji
-  val kanjiSyllables = token.getSurface.splitIntoSyllables.diff(token.extractKana)
-  val maxSyllablesPerKanji = Math.floor(kanjiSyllables.size / kanjis.size).toInt
-
-  //Fold ん-syllables here
-  val kanjiSyllablesNFolded = collapseOnNSyllables(kanjiSyllables).map(_._2)
-
-  if (kanjis.size == 0) Map[Char, String]()
-  else if (kanjis.size == 1) Map(kanjis.head -> token.toHiragana().diff(token.extractKana))
-  else if (kanjis.size == kanjiSyllablesNFolded.size) kanjis zip kanjiSyllablesNFolded toMap
-  //else if (kanjis.size != kanjiSyllables.size && !readingsMap.isEmpty) we have readings
-  //else if (kanjiSyllables.size % kanjis.size == 0) kanjiSyllables.sliding(kanjiSyllables.size / kanjis.size, kanjiSyllables.size / kanjis.size)
-  else Map[Char,String]()
-}
-sample2.tokenize()
-sample4.tokenize()
-sample5.tokenize()
-//furiganaFor(sample4.tokenize())
-sample4.tokenize().map(furiganaFor(_))
-//sample4.tokenize().map(furiganaFor(_))
-furiganaFor(sample4.tokenize().head)
-furiganaFor(sample5.tokenize().head)
+samples.zipWithIndex.foreach(is => println("n:" + is._2 + ":" + is._1 + ": furigana: " + is._1.furigana(sampleReadings).mkString(",")))
