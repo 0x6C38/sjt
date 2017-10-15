@@ -42,7 +42,7 @@ trait Japanese[A] {
 
   def tokenize(value:A, tokenizer:Option[Tokenizer] = None):Array[Token]
 
-  def furigana(value:A, readingsMap:Map[Char, List[String]] = Map(), tokenizer:Option[Tokenizer] = None):Array[(Char, String)]
+  def furigana(value:A, readingsMap:Map[Char, List[String]] = Map(), tokenizer:Option[Tokenizer] = None):Array[Transliteration]
 }
 
 object JapaneseInstances{
@@ -87,7 +87,8 @@ object JapaneseInstances{
 
     //override def furigana(value: Char, readingsMap: Map[Char, List[String]], tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)) = tokenize(value, tokenizer).flatMap(t => kuromojiToken.furigana(t, readingsMap))
     //Can it even be implemented for a single char?
-    override def furigana(value: Char, readingsMap: Map[Char, List[String]], tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)) = Array((value, value.toString))
+    //override def furigana(value: Char, readingsMap: Map[Char, List[String]], tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)) = Array((value, value.toString))
+    override def furigana(value: Char, readingsMap: Map[Char, List[String]], tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)) = ???
 
   }
 
@@ -123,7 +124,6 @@ object JapaneseInstances{
     }
     override def tokenize(value:String, tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):Array[Token] = tokenizer.getOrElse(Kana.tokenizer).tokenize(value).asScala.toArray
 
-
     private def hiraganaSpacing(t:Token) = ""
     private def katakanaSpacing(t:Token) = if(Kana.isTranslateableSymbol(t.getSurface())) "" else "・"
     private def romajiSpacing(t:Token) = if(t.getAllFeaturesArray()(1) == "接続助詞" || Kana.isTranslateableSymbol(t.getSurface())) "" else " "
@@ -143,7 +143,7 @@ object JapaneseInstances{
 
     //Needs to avoid circular reference to kuromoji token.
     override def furigana(value: String, readingsMap: Map[Char, List[String]], tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)) = tokenize(value, tokenizer).flatMap(t => tokenToFurigana(t, readingsMap))
-    def tokenToFurigana(token:Token, readingsMap:Map[Char, List[String]] = Map(), tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):Array[(Char, String)] = {
+    def tokenToFurigana(token:Token, readingsMap:Map[Char, List[String]] = Map(), tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):Array[Transliteration] = {
       def collapseOnNSyllables(syllables:List[(Kana,String)]):List[(Kana,String)] = {
         //val syllablesWithN = syllables.zipWithIndex.filter(_._1._1.hiragana == "ん")
         //val preSyllablesWithN = syllablesWithN.map(s => if (s._2 > 0) s._2 - 1 else s._2)
@@ -206,11 +206,19 @@ object JapaneseInstances{
 
       val cutGroupings = cut(kanjiSyllablesNFolded, kanjis.size).map(_.mkString(""))
 
-      if (numKanjis == 0) Array[(Char, String)]()
-      else if (numKanjis == 1) Array(kanjis.head -> kanjiPartInHiragana) //missing another parenns?
-      else if (numKanjis == kanjiSyllablesNFolded.size) kanjis.zip(kanjiSyllablesNFolded).toArray
-      else if (numKanjis != kanjiSyllablesNFolded.size && !readingsMap.isEmpty) reduceUnkownsByReadingsMap(kanjis, kanjiPartInHiragana, readingsMap.toArray) //no toArray
-      else kanjis.zip(cutGroupings).toArray
+//      if (numKanjis == 0) Array[(Char, String)]()
+//      else if (numKanjis == 1) Array(kanjis.head -> kanjiPartInHiragana) //missing another parenns?
+//      else if (numKanjis == kanjiSyllablesNFolded.size) kanjis.zip(kanjiSyllablesNFolded).toArray
+//      else if (numKanjis != kanjiSyllablesNFolded.size && !readingsMap.isEmpty) reduceUnkownsByReadingsMap(kanjis, kanjiPartInHiragana, readingsMap.toArray) //no toArray
+//      else kanjis.zip(cutGroupings).toArray
+
+      def tupleToTransliteration(k:Char, s:String) = transliterate(s).copy(original=k.toString)
+
+      if (numKanjis == 0) Array()
+      else if (numKanjis == 1) Array(tupleToTransliteration(kanjis.head,kanjiPartInHiragana))
+      else if (numKanjis == kanjiSyllablesNFolded.size) kanjis.zip(kanjiSyllablesNFolded).map(z => tupleToTransliteration(z._1,z._2)).toArray
+      else if (numKanjis != kanjiSyllablesNFolded.size && !readingsMap.isEmpty) reduceUnkownsByReadingsMap(kanjis, kanjiPartInHiragana, readingsMap.toArray).map(z => tupleToTransliteration(z._1,z._2)) //no toArray
+      else kanjis.zip(cutGroupings).map(z => tupleToTransliteration(z._1,z._2)).toArray
     }
   }
   implicit val kuromojiToken = new Japanese[Token] {
@@ -242,7 +250,7 @@ object JapaneseInstances{
     }
 
     override def tokenize(value: Token, tokenizer: Option[Tokenizer]):Array[Token] = Array(value)
-    override def furigana(token:Token, readingsMap:Map[Char, List[String]] = Map(), tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):Array[(Char, String)] = japaneseString.tokenToFurigana(token,readingsMap,tokenizer)
+    override def furigana(token:Token, readingsMap:Map[Char, List[String]] = Map(), tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):Array[Transliteration] = japaneseString.tokenToFurigana(token,readingsMap,tokenizer)
 
   }
 }
@@ -274,7 +282,7 @@ object Japanese {
   def splitIntoSyllables[A](input:A)(implicit p: Japanese[A]):List[(Kana, String)] = p.splitIntoSyllables(input)
 
   def tokenize[A](input:A)(implicit p: Japanese[A]):Array[Token] = p.tokenize(input)//missing tokenizer??
-  def furigana[A](input:A)(implicit p: Japanese[A]):Array[(Char, String)] = p.furigana(input) //missing tokenizer??
+  def furigana[A](input:A)(implicit p: Japanese[A]):Array[Transliteration] = p.furigana(input) //missing tokenizer??
 }
 
 object JapaneseSyntax {
@@ -311,7 +319,7 @@ object JapaneseSyntax {
 
     def tokenize(t:Tokenizer = null)(implicit p: Japanese[A]):Array[Token] = if (t != null) p.tokenize(value, Some(t)) else p.tokenize(value)
 
-    def furigana(readingsMap:Map[Char, List[String]] = Map(), t:Tokenizer = null)(implicit p: Japanese[A]):Array[(Char, String)] = if (t != null) p.furigana(value, readingsMap, Some(t)) else p.furigana(value, readingsMap)
+    def furigana(readingsMap:Map[Char, List[String]] = Map(), t:Tokenizer = null)(implicit p: Japanese[A]):Array[Transliteration] = if (t != null) p.furigana(value, readingsMap, Some(t)) else p.furigana(value, readingsMap)
 
   }
 }
