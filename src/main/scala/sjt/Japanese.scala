@@ -85,10 +85,9 @@ object JapaneseInstances{
 
     override def tokenize(value: Char, tokenizer: Option[Tokenizer]) = tokenizer.getOrElse(Kana.tokenizer).tokenize(value.toString).asScala.toArray
 
-    //override def furigana(value: Char, readingsMap: Map[Char, List[String]], tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)) = tokenize(value, tokenizer).flatMap(t => kuromojiToken.furigana(t, readingsMap))
     //Can it even be implemented for a single char?
-    //override def furigana(value: Char, readingsMap: Map[Char, List[String]], tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)) = Array((value, value.toString))
-    override def furigana(value: Char, readingsMap: Map[Char, List[String]], tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)) = ???
+    //override def furigana(value: Char, readingsMap: Map[Char, List[String]], tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):Array[Transliteration]= tokenize(value, tokenizer).headOption.map(t => japaneseString.tokenToFurigana(t)).getOrElse(Array())
+    override def furigana(value: Char, readingsMap: Map[Char, List[String]], tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):Array[Transliteration]= Array(transliterate(value))
 
   }
 
@@ -141,7 +140,6 @@ object JapaneseInstances{
     override def extractUniqueKatakana(value: String) = value.toCharArray.filter(c => japaneseChar.isKatakana(c)).toSet
     override def extractUniqueKanji(value:String):Set[Char] = value.toCharArray.filter(c => japaneseChar.isKanji(c)).toSet
 
-    //Needs to avoid circular reference to kuromoji token.
     override def furigana(value: String, readingsMap: Map[Char, List[String]], tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)) = tokenize(value, tokenizer).flatMap(t => tokenToFurigana(t, readingsMap))
     def tokenToFurigana(token:Token, readingsMap:Map[Char, List[String]] = Map(), tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):Array[Transliteration] = {
       def collapseOnNSyllables(syllables:List[(Kana,String)]):List[(Kana,String)] = {
@@ -198,19 +196,11 @@ object JapaneseInstances{
       val kanjiUnique:Set[Char] = extractUniqueKanji(token.getSurface)
       val kanjiSyllables:List[(Kana, String)] = extractKanjiSyllables(tokensToHiraganaString(List(token)))
 
-      val tokenToHStr = Kana.toHiragana(splitIntoSyllables(tokensToHiraganaString(List(token))))
-      val diff = extractKana(token.getSurface)
       val kanjiPartInHiragana:String = Kana.toHiragana(splitIntoSyllables(tokensToHiraganaString(List(token)))).diff(extractKana(token.getSurface)) //potencial bug if surface isn't in hiragana
 
       val kanjiSyllablesNFolded = collapseOnNSyllables(kanjiSyllables).map(_._2)
 
       val cutGroupings = cut(kanjiSyllablesNFolded, kanjis.size).map(_.mkString(""))
-
-//      if (numKanjis == 0) Array[(Char, String)]()
-//      else if (numKanjis == 1) Array(kanjis.head -> kanjiPartInHiragana) //missing another parenns?
-//      else if (numKanjis == kanjiSyllablesNFolded.size) kanjis.zip(kanjiSyllablesNFolded).toArray
-//      else if (numKanjis != kanjiSyllablesNFolded.size && !readingsMap.isEmpty) reduceUnkownsByReadingsMap(kanjis, kanjiPartInHiragana, readingsMap.toArray) //no toArray
-//      else kanjis.zip(cutGroupings).toArray
 
       def tupleToTransliteration(k:Char, s:String) = transliterate(s).copy(original=k.toString)
 
@@ -244,7 +234,7 @@ object JapaneseInstances{
 
     override def transliterate(value: Token, tokenizer: Option[Tokenizer] = Some(Kana.tokenizer)): Transliteration = {
       val syllables = splitIntoSyllables(value)
-      Transliteration(value.getSurface, Kana(Kana.toHiragana(syllables), //tokenToString(value)
+      Transliteration(value.getSurface, Kana(Kana.toHiragana(syllables),
                                                  Kana.toKatakana(syllables),
                                                   Kana.toRomaji(syllables)))
     }
@@ -342,6 +332,5 @@ object Main {
     //TODO: Refactor messy type-class instances dependencies
     //TODO: Rename Kana fields and privitize them if necessary
     //TODO: Command line interaction
-
   }
  }
