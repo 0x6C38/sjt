@@ -38,7 +38,7 @@ trait Japanese[A] {
   def toHiragana(value: A, tokenizer:Option[Tokenizer] = None): String = transliterate(value, tokenizer).kana.hiragana
   def transliterate(value:A, tokenizer:Option[Tokenizer] = None):Transliteration
 
-  def splitIntoSyllables(input:A, l: List[(Kana, String)] = Nil): List[(Kana,String)]
+  def syllabify(input:A, l: List[(Kana, String)] = Nil): List[(Kana,String)]
 
   def tokenize(value:A, tokenizer:Option[Tokenizer] = None):Array[Token]
 
@@ -68,12 +68,12 @@ object JapaneseInstances{
     def isExtension(value:Char):Boolean = isHiraganaExtension(value) || isKatakanaExtension(value)
 
     def transliterate(value: Char, tokenizer: Option[Tokenizer] = Some(Kana.tokenizer)): Transliteration = {
-      Transliteration(value.toString, Kana(if (value == 'ッ') "っ" else Kana.toHiragana(splitIntoSyllables(value)),
-                                           if (value == 'っ') "ッ" else Kana.toKatakana(splitIntoSyllables(value)),
-                                                                        Kana.toRomaji(splitIntoSyllables(value))))
+      Transliteration(value.toString, Kana(if (value == 'ッ') "っ" else Kana.toHiragana(syllabify(value)),
+                                           if (value == 'っ') "ッ" else Kana.toKatakana(syllabify(value)),
+                                                                        Kana.toRomaji(syllabify(value))))
     }
 
-    override def splitIntoSyllables(input: Char, l: List[(Kana, String)]): List[(Kana, String)] =  List(Kana.nextSyllable(input.toString))
+    override def syllabify(input: Char, l: List[(Kana, String)]): List[(Kana, String)] =  List(Kana.nextSyllable(input.toString))
 
     override def extractHiragana(value: Char):String = if (isHiragana(value)) value.toString else ""
     override def extractKatakana(value: Char):String = if (isKatakana(value)) value.toString else ""
@@ -104,21 +104,21 @@ object JapaneseInstances{
     def isLatin(value: String): Boolean = value.toCharArray.forall(japaneseChar.isLatin)
 
     @tailrec
-    override def splitIntoSyllables(input: String, l: List[(Kana, String)] = Nil): List[(Kana,String)] = {
+    override def syllabify(input: String, l: List[(Kana, String)] = Nil): List[(Kana,String)] = {
       val nS = Kana.nextSyllable(input)
       if (input.isEmpty) l
-      else splitIntoSyllables(input.drop(nS._2.length), nS :: l)
+      else syllabify(input.drop(nS._2.length), nS :: l)
     }
 
     override def transliterate(value: String, tokenizer: Option[Tokenizer] = Some(Kana.tokenizer)): Transliteration = {
       if (!containsKanji(value)) {
-        val syllables = splitIntoSyllables(value)
+        val syllables = syllabify(value)
         Transliteration(value, Kana(Kana.toHiragana(syllables), Kana.toKatakana(syllables), Kana.toRomaji(syllables)))
       } else {
         val tokens = tokenizer.getOrElse(Kana.tokenizer).tokenize(value).asScala.toList
-        Transliteration(value, Kana(Kana.toHiragana(splitIntoSyllables(tokensToHiraganaString(tokens))),
-                                    Kana.toKatakana(splitIntoSyllables(tokensToKatakanaString(tokens))).tail,
-                                    Kana.toRomaji(splitIntoSyllables(tokensToRomajiString(tokens)))))
+        Transliteration(value, Kana(Kana.toHiragana(syllabify(tokensToHiraganaString(tokens))),
+                                    Kana.toKatakana(syllabify(tokensToKatakanaString(tokens))).tail,
+                                    Kana.toRomaji(syllabify(tokensToRomajiString(tokens)))))
       }
     }
     override def tokenize(value:String, tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):Array[Token] = tokenizer.getOrElse(Kana.tokenizer).tokenize(value).asScala.toArray
@@ -187,16 +187,16 @@ object JapaneseInstances{
 
         if (oneWay) singleAlternatives.reverse //prev no reverse
         else if (!oneWay && s != unknownKanjis) (singleAlternatives ++ reduceUnkownsByReadingsMap(unknownKanjis, unknownPartHiragana, multipleAlternatives))
-        else singleAlternatives ++ (unknownKanjis ++ noAlternatives.map(_._1).mkString("") zip cut(collapseOnNSyllables(splitIntoSyllables(unknownPartHiragana)).map(_._2), unknownKanjis.size).map(_.mkString(""))).toMap //unknownPartHiragana.extractKanji
+        else singleAlternatives ++ (unknownKanjis ++ noAlternatives.map(_._1).mkString("") zip cut(collapseOnNSyllables(syllabify(unknownPartHiragana)).map(_._2), unknownKanjis.size).map(_.mkString(""))).toMap //unknownPartHiragana.extractKanji
       }
-      def extractKanjiSyllables(s:String) = splitIntoSyllables(toHiragana(s).diff(extractKana(s)))
+      def extractKanjiSyllables(s:String) = syllabify(toHiragana(s).diff(extractKana(s)))
 
       val kanjis:String = extractKanji(token.getSurface)
       val numKanjis:Int = kanjis.size
       val kanjiUnique:Set[Char] = extractUniqueKanji(token.getSurface)
       val kanjiSyllables:List[(Kana, String)] = extractKanjiSyllables(tokensToHiraganaString(List(token)))
 
-      val kanjiPartInHiragana:String = Kana.toHiragana(splitIntoSyllables(tokensToHiraganaString(List(token)))).diff(extractKana(token.getSurface)) //potencial bug if surface isn't in hiragana
+      val kanjiPartInHiragana:String = Kana.toHiragana(syllabify(tokensToHiraganaString(List(token)))).diff(extractKana(token.getSurface)) //potencial bug if surface isn't in hiragana
 
       val kanjiSyllablesNFolded = collapseOnNSyllables(kanjiSyllables).map(_._2)
 
@@ -222,7 +222,7 @@ object JapaneseInstances{
     def containsKanji(value: Token): Boolean = japaneseString.containsKanji(value.getSurface)
     def isLatin(value: Token): Boolean = japaneseString.isLatin(value.getSurface)
 
-    override def splitIntoSyllables(input: Token, l: List[(Kana, String)] = Nil): List[(Kana, String)] = japaneseString.splitIntoSyllables(tokenToString(input))
+    override def syllabify(input: Token, l: List[(Kana, String)] = Nil): List[(Kana, String)] = japaneseString.syllabify(tokenToString(input))
     private def tokenToString(input:Token): String = if (input.getPronunciation != "*") input.getPronunciation else input.getSurface
     override def extractHiragana(value: Token):String = japaneseString.extractHiragana(value.getSurface)
     override def extractKatakana(value: Token):String = japaneseString.extractKatakana(value.getSurface)
@@ -233,7 +233,7 @@ object JapaneseInstances{
     override def extractUniqueKanji(value:Token):Set[Char] = japaneseString.extractUniqueKanji(value.getSurface)
 
     override def transliterate(value: Token, tokenizer: Option[Tokenizer] = Some(Kana.tokenizer)): Transliteration = {
-      val syllables = splitIntoSyllables(value)
+      val syllables = syllabify(value)
       Transliteration(value.getSurface, Kana(Kana.toHiragana(syllables),
                                                  Kana.toKatakana(syllables),
                                                   Kana.toRomaji(syllables)))
@@ -269,7 +269,7 @@ object Japanese {
   def toRomaji[A](input: A)(implicit p: Japanese[A]): String = p.toRomaji(input)
   def toKatakana[A](input:A)(implicit p: Japanese[A]): String = p.toKatakana(input)
   def toHiragana[A](input:A)(implicit p: Japanese[A]): String = p.toHiragana(input)
-  def splitIntoSyllables[A](input:A)(implicit p: Japanese[A]):List[(Kana, String)] = p.splitIntoSyllables(input)
+  def sillabify[A](input:A)(implicit p: Japanese[A]):List[(Kana, String)] = p.syllabify(input)
 
   def tokenize[A](input:A)(implicit p: Japanese[A]):Array[Token] = p.tokenize(input)//missing tokenizer??
   def furigana[A](input:A)(implicit p: Japanese[A]):Array[Transliteration] = p.furigana(input) //missing tokenizer??
@@ -305,7 +305,7 @@ object JapaneseSyntax {
     def toKatakana(t:Tokenizer = null)(implicit p: Japanese[A]): String = if (t != null) p.toKatakana(value, Some(t)) else p.toKatakana(value)
     def toHiragana(t:Tokenizer = null)(implicit p: Japanese[A]): String = if (t != null) p.toHiragana(value, Some(t)) else p.toHiragana(value)
     def transliterate(t:Tokenizer = null)(implicit p: Japanese[A]):Transliteration = if (t != null) p.transliterate(value, Some(t)) else p.transliterate(value)
-    def splitIntoSyllables(implicit p: Japanese[A]):List[(Kana, String)] = p.splitIntoSyllables(value)
+    def sillabify(implicit p: Japanese[A]):List[(Kana, String)] = p.syllabify(value)
 
     def tokenize(t:Tokenizer = null)(implicit p: Japanese[A]):Array[Token] = if (t != null) p.tokenize(value, Some(t)) else p.tokenize(value)
 
