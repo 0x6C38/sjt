@@ -25,7 +25,10 @@ case class Kana(hiragana:String, katakana:String, romaji:String){
 
 object Kana {
   import Kana._
+  import scala.io.Source
+
   lazy val tokenizer:Tokenizer = new Tokenizer()
+  lazy val readingsForKanji:Map[Char, Array[String]] = Source.fromResource("dic.csv").getLines().filterNot(_.isEmpty).map(_.replace("\"", "")).map(line => line.head -> line.drop(2).split(",")).toMap
 
   val nonDiacritics = Set[Kana](Kana("あ", "ア", "a"), Kana("か", "カ", "ka"), Kana("さ", "サ", "sa"), Kana("た", "タ", "ta"), Kana("な", "ナ", "na"), Kana("は", "ハ", "ha"), Kana("ま", "マ", "ma"), Kana("や", "ヤ", "ya"), Kana("ら", "ラ", "ra"), Kana("わ", "ワ", "wa")
     , Kana("い", "イ", "i"), Kana("き", "キ", "ki"), Kana("し", "シ", "shi"), Kana("ち", "チ", "chi"), Kana("に", "ニ", "ni"), Kana("ひ", "ヒ", "hi"), Kana("み", "ミ", "mi"), Kana("り", "リ", "ri")
