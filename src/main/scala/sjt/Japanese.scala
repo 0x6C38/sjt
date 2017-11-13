@@ -42,7 +42,7 @@ trait Japanese[A] {
 
   def tokenize(value:A, tokenizer:Option[Tokenizer] = None):Array[Token]
 
-  def furigana(value:A, readingsMap:Map[Char, List[String]] = Map(), tokenizer:Option[Tokenizer] = None):Array[Transliteration]
+  def furigana(value:A, readingsMap:Map[Char, Array[String]] = Map(), tokenizer:Option[Tokenizer] = None):Array[Transliteration]
 }
 
 object JapaneseInstances{
@@ -87,7 +87,7 @@ object JapaneseInstances{
 
     //Can it even be implemented for a single char?
     //override def furigana(value: Char, readingsMap: Map[Char, List[String]], tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):Array[Transliteration]= tokenize(value, tokenizer).headOption.map(t => japaneseString.tokenToFurigana(t)).getOrElse(Array())
-    override def furigana(value: Char, readingsMap: Map[Char, List[String]], tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):Array[Transliteration]= Array(transliterate(value))
+    override def furigana(value: Char, readingsMap: Map[Char, Array[String]], tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):Array[Transliteration]= Array(transliterate(value))
 
   }
 
@@ -140,8 +140,8 @@ object JapaneseInstances{
     override def extractUniqueKatakana(value: String) = value.toCharArray.filter(c => japaneseChar.isKatakana(c)).toSet
     override def extractUniqueKanji(value:String):Set[Char] = value.toCharArray.filter(c => japaneseChar.isKanji(c)).toSet
 
-    override def furigana(value: String, readingsMap: Map[Char, List[String]], tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)) = tokenize(value, tokenizer).flatMap(t => tokenToFurigana(t, readingsMap))
-    def tokenToFurigana(token:Token, readingsMap:Map[Char, List[String]] = Map(), tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):Array[Transliteration] = {
+    override def furigana(value: String, readingsMap: Map[Char, Array[String]], tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)) = tokenize(value, tokenizer).flatMap(t => tokenToFurigana(t, readingsMap))
+    def tokenToFurigana(token:Token, readingsMap:Map[Char, Array[String]] = Map(), tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):Array[Transliteration] = {
       def collapseOnNSyllables(syllables:List[(Kana,String)]):List[(Kana,String)] = {
         //val syllablesWithN = syllables.zipWithIndex.filter(_._1._1.hiragana == "ん")
         //val preSyllablesWithN = syllablesWithN.map(s => if (s._2 > 0) s._2 - 1 else s._2)
@@ -167,17 +167,17 @@ object JapaneseInstances{
         }
         snip(xs, targets, Vector.empty)
       }
-      def reduceUnkownsByReadingsMap(s:String, hiraganaReading:String, readingsMap:Array[(Char, List[String])] = Array()): Array[(Char, String)] = {
-        def calculateViableReadings(reading: String, kanjisInText: Set[Char], readingsMap: Array[(Char, List[String])]): Array[(Char, List[String])] = readingsMap.filter(m => kanjisInText.contains(m._1)).map(m => m._1 -> m._2.filter(reading.contains(_)))
-        def groupViableReadings(readings: Array[(Char, List[String])]): (Array[(Char, List[String])], Array[(Char, List[String])]) = readings.partition(m => m._2.size > 1)
-        def onlyOneWay(grViableReadings: (Map[Char, scala.List[String]], Map[Char, scala.List[String]])): Boolean = grViableReadings._1.isEmpty
+      def reduceUnkownsByReadingsMap(s:String, hiraganaReading:String, readingsMap:Array[(Char, Array[String])] = Array()): Array[(Char, String)] = {
+        def calculateViableReadings(reading: String, kanjisInText: Set[Char], readingsMap: Array[(Char, Array[String])]): Array[(Char, Array[String])] = readingsMap.filter(m => kanjisInText.contains(m._1)).map(m => m._1 -> m._2.filter(reading.contains(_)))
+        def groupViableReadings(readings: Array[(Char, Array[String])]): (Array[(Char, Array[String])], Array[(Char, Array[String])]) = readings.partition(m => m._2.size > 1)
+        def onlyOneWay(grViableReadings: (Map[Char, scala.Array[String]], Map[Char, scala.Array[String]])): Boolean = grViableReadings._1.isEmpty
 
-        val viableReadings: Array[(Char, List[String])] = calculateViableReadings(hiraganaReading, extractUniqueKanji(s), readingsMap)
+        val viableReadings: Array[(Char, Array[String])] = calculateViableReadings(hiraganaReading, extractUniqueKanji(s), readingsMap)
 
-        val groupedViableReadings:(Array[(Char, List[String])], Array[(Char, List[String])]) = groupViableReadings(viableReadings) //find duplicates?
-        val multipleAlternatives:Array[(Char, List[String])] = groupedViableReadings._1
+        val groupedViableReadings:(Array[(Char, Array[String])], Array[(Char, Array[String])]) = groupViableReadings(viableReadings) //find duplicates?
+        val multipleAlternatives:Array[(Char, Array[String])] = groupedViableReadings._1
         //val test:Long = groupedViableReadings._2
-        val noAlternatives:Array[(Char, List[String])] = groupedViableReadings._2.filter(i => i._2.isEmpty).toArray
+        val noAlternatives:Array[(Char, Array[String])] = groupedViableReadings._2.filter(i => i._2.isEmpty).toArray
         val singleAlternatives:Array[(Char, String)] = groupedViableReadings._2.filterNot(i => i._2.isEmpty).map(i => (i._1, i._2.head)).toArray
 
         val unknownPartHiragana: String = singleAlternatives.foldLeft(hiraganaReading) { (z, i) => z.replaceFirst(i._2, "") }
@@ -240,7 +240,7 @@ object JapaneseInstances{
     }
 
     override def tokenize(value: Token, tokenizer: Option[Tokenizer]):Array[Token] = Array(value)
-    override def furigana(token:Token, readingsMap:Map[Char, List[String]] = Map(), tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):Array[Transliteration] = japaneseString.tokenToFurigana(token,readingsMap,tokenizer)
+    override def furigana(token:Token, readingsMap:Map[Char, Array[String]] = Map(), tokenizer:Option[Tokenizer] = Some(Kana.tokenizer)):Array[Transliteration] = japaneseString.tokenToFurigana(token,readingsMap,tokenizer)
 
   }
 }
@@ -309,7 +309,7 @@ object JapaneseSyntax {
 
     def tokenize(t:Tokenizer = null)(implicit p: Japanese[A]):Array[Token] = if (t != null) p.tokenize(value, Some(t)) else p.tokenize(value)
 
-    def furigana(readingsMap:Map[Char, List[String]] = Map(), t:Tokenizer = null)(implicit p: Japanese[A]):Array[Transliteration] = if (t != null) p.furigana(value, readingsMap, Some(t)) else p.furigana(value, readingsMap)
+    def furigana(readingsMap:Map[Char, Array[String]] = Map(), t:Tokenizer = null)(implicit p: Japanese[A]):Array[Transliteration] = if (t != null) p.furigana(value, readingsMap, Some(t)) else p.furigana(value, readingsMap)
 
   }
 }
@@ -332,11 +332,14 @@ object Main {
     //TODO: Refactor messy type-class instances dependencies
     //TODO: Rename Kana fields and privitize them if necessary
     //TODO: Command line interaction
-    import scala.io.Source
-    val dic : Iterator[String] = Source.fromResource("dic.csv").getLines()
-    val fm = dic.filterNot(_.isEmpty).map(_.replace("\"", "")).map(line => line.head -> line.drop(2).split(",")).toMap
-    fm.foreach(kv => println(kv._1 + " , " + kv._2.mkString(",")))
-    println(fm.mkString)
+    //println("皆さんは日本の四つの大きな島の名前を知っていますか".furigana().mkString(","))
+//    import scala.io.Source
+//    val dic : Iterator[String] = Source.fromResource("dic.csv").getLines()
+//    val fm = dic.filterNot(_.isEmpty).map(_.replace("\"", "")).map(line => line.head -> line.drop(2).split(",")).toMap
+//    fm.foreach(kv => println(kv._1 + " , " + kv._2.mkString(",")))
+
+//    println(fm.mkString)
+//    println(fm.size)
 
   }
  }
