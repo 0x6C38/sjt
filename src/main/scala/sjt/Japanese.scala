@@ -309,7 +309,8 @@ object JapaneseSyntax {
 
     def tokenize(t:Tokenizer = null)(implicit p: Japanese[A]):Array[Token] = if (t != null) p.tokenize(value, Some(t)) else p.tokenize(value)
 
-    def furigana(readingsMap:Map[Char, Array[String]] = Map(), t:Tokenizer = null)(implicit p: Japanese[A]):Array[Transliteration] = if (t != null) p.furigana(value, readingsMap, Some(t)) else p.furigana(value, readingsMap)
+    def furigana(readingsMap: Map[Char, Array[String]] = Kana.readingsForKanji, t: Tokenizer = null)(implicit p: Japanese[A]): Array[Transliteration] =
+      if (t != null) p.furigana(value, readingsMap, Some(t)) else p.furigana(value, readingsMap)
 
   }
 }
@@ -328,11 +329,12 @@ object Main {
   import JapaneseInstances._
   import JapaneseSyntax._
   def main(args: Array[String]): Unit = {
-    println("hi")
+//    println("hi")
     //TODO: Refactor messy type-class instances dependencies
     //TODO: Rename Kana fields and privitize them if necessary
     //TODO: Command line interaction
-    //println("皆さんは日本の四つの大きな島の名前を知っていますか".furigana().mkString(","))
+    //TODO: Make it so that furigana extraction maintains order when there is a dictionary
+//    println("皆さんは日本の四つの大きな島の名前を知っていますか".furigana().mkString(","))
 //    import scala.io.Source
 //    val dic : Iterator[String] = Source.fromResource("dic.csv").getLines()
 //    val fm = dic.filterNot(_.isEmpty).map(_.replace("\"", "")).map(line => line.head -> line.drop(2).split(",")).toMap
