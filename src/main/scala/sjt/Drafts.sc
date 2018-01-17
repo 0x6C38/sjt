@@ -16,11 +16,11 @@ Kana.isTranslateableSymbol("。")
 Kana.translateableSymbolsStr
 def printDebug(s: String): Unit = {
   //println("---------------------------")
-  println(s"$s Original: $s, romaji: " + s.toRomaji() + " hiragana: " + s.toHiragana() + ", katakana: " +s.toKatakana()+ ", syllables: " + s.sillabify)
+  println(s"$s Original: $s, romaji: " + s.toRomaji() + " hiragana: " + s.toHiragana() + ", katakana: " +s.toKatakana()+ ", syllables: " + s.syllabify)
   println(s"$s to romaji[New]: " + s.toRomaji())
   println(s"$s to Hiragana: " + s.toHiragana())
-  println(s"$s syllables: " + s.sillabify)
-  println(s"$s syllables k: " + s.toKatakana().sillabify)
+  println(s"$s syllables: " + s.syllabify)
+  println(s"$s syllables k: " + s.toKatakana().syllabify)
   println
 
 }

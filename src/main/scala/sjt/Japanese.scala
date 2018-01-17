@@ -269,7 +269,7 @@ object Japanese {
   def toRomaji[A](input: A)(implicit p: Japanese[A]): String = p.toRomaji(input)
   def toKatakana[A](input:A)(implicit p: Japanese[A]): String = p.toKatakana(input)
   def toHiragana[A](input:A)(implicit p: Japanese[A]): String = p.toHiragana(input)
-  def sillabify[A](input:A)(implicit p: Japanese[A]):List[(Kana, String)] = p.syllabify(input)
+  def syllabify[A](input:A)(implicit p: Japanese[A]):List[(Kana, String)] = p.syllabify(input)
 
   def tokenize[A](input:A)(implicit p: Japanese[A]):Array[Token] = p.tokenize(input)//missing tokenizer??
   def furigana[A](input:A)(implicit p: Japanese[A]):Array[Transliteration] = p.furigana(input) //missing tokenizer??
@@ -305,7 +305,7 @@ object JapaneseSyntax {
     def toKatakana(t:Tokenizer = null)(implicit p: Japanese[A]): String = if (t != null) p.toKatakana(value, Some(t)) else p.toKatakana(value)
     def toHiragana(t:Tokenizer = null)(implicit p: Japanese[A]): String = if (t != null) p.toHiragana(value, Some(t)) else p.toHiragana(value)
     def transliterate(t:Tokenizer = null)(implicit p: Japanese[A]):Transliteration = if (t != null) p.transliterate(value, Some(t)) else p.transliterate(value)
-    def sillabify(implicit p: Japanese[A]):List[(Kana, String)] = p.syllabify(value)
+    def syllabify(implicit p: Japanese[A]):List[(Kana, String)] = p.syllabify(value)
 
     def tokenize(t:Tokenizer = null)(implicit p: Japanese[A]):Array[Token] = if (t != null) p.tokenize(value, Some(t)) else p.tokenize(value)
 
@@ -333,6 +333,5 @@ object Main {
     //TODO: Rename Kana fields and privitize them if necessary
     //TODO: Command line interaction
     //TODO: Make it so that furigana extraction maintains order when there is a dictionary
-
   }
  }
