@@ -11,6 +11,7 @@ val cachedTokenizer = new Tokenizer()
 
 import JapaneseInstances._
 import JapaneseSyntax._
+"猫はすごいです".transliterate(cachedTokenizer)
 
 Kana.isTranslateableSymbol("。")
 Kana.translateableSymbolsStr
