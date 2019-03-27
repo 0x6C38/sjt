@@ -11,7 +11,13 @@ val cachedTokenizer = new Tokenizer()
 
 import JapaneseInstances._
 import JapaneseSyntax._
+"tōkyō".toHiragana()
+"ぎゅうにゅう".toKatakana()
+"shasshin"
 "猫はすごいです".transliterate(cachedTokenizer)
+"図書館".transliterate(cachedTokenizer)
+"としょかん".transliterate()
+"目標".transliterate()
 
 Kana.isTranslateableSymbol("。")
 Kana.translateableSymbolsStr
