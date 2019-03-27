@@ -61,3 +61,36 @@ val cachedTokenizer = new Tokenizer()
 If you don't pass a tokenizer instance explicitly one will be created for you under the covers. Instanciating a tokenizer can take almost 1000ms cold and that is a huge amount of time so always be sure to pass one.
 
 ### Split into syllables
+The `Japanese` typeclass also defines `syllabify` which returns a `List[(Kana, String)]` with the syllables reversed:
+
+``` scala
+"ゆうびんきょく".syllabify
+// List[(sjt.Kana, String)] = List((Kana(く,ク,ku),く), (Kana(きょ,キョ,kyo),きょ), (Kana(ん,ン,n),ん), (Kana(び,ビ,bi),び), (Kana(ゆ,ユ,yu),ゆう))
+```
+
+### Furigana
+You can extract furigana for each kanji by using the `furigana` function:
+
+``` scala
+"郵便局".furigana()
+// Array[sjt.Transliteration] = Array(Transliteration(郵,Kana(ゆう,ユー,yū)), Transliteration(便,Kana(びん,ビン,bin)), Transliteration(局,Kana(きょく,キョク,kyoku)))
+```
+
+### Utility functions
+There are a number of functions defined by the `Japanese` typeclass, such as:
+
+```scala
+"言葉".containsKanji
+// true
+```
+
+The `Kana` class also defines some utility methods as well as a number of sets of different kana:
+
+```scala
+import sjt.Kana._
+val yoon = Kana.yoon
+// Set[sjt.Kana] = Set(Kana(ちょ,チョ,cho), Kana(じゃ,ジャ,ja), Kana(きゃ,キャ,kya), Kana(ぢゅ,ヂュ,ju), Kana(きゅ,キュ,kyu), Kana(にょ,ニョ,nyo), Kana(しゃ,シャ,sha), Kana(じぇ,ジェ,je), Kana(ぎゅ,ギュ,gyu), Kana(りゃ,リャ,rya), Kana(ひゃ,ヒャ,hya), Kana(びゅ,ビュ,byu), Kana(びょ,ビョ,byo), Kana(ぢょ,ヂョ,jo), Kana(ちゅ,チュ,chu), Kana(ひょ,ヒョ,hyo), Kana(ぢゃ,ヂャ,ja), Kana(りゅ,リュ,ryu), Kana(しょ,ショ,sho), Kana(ひゅ,ヒュ,hyu), Kana(にゅ,ニュ,nyu), Kana(りょ,リョ,ryo), Kana(ちゃ,チャ,cha), Kana(ぎゃ,ギャ,gya), Kana(きょ,キョ,kyo), Kana(みゃ,ミャ,mya), Kana(にゃ,ニャ,nya), Kana(じょ,ジョ,jo), Kana(びゃ,ビャ,bya), Kana(じゅ,ジュ,ju), Kana(みょ,ミョ,myo), Kana(ぎょ,ギョ,gyo), Kana(しゅ,シュ,shu), Kana(みゅ,ミュ,myu))
+
+ys.head.extendVowel()
+// Kana(ちょう,チョー,chō)
+```

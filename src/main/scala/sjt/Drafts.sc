@@ -19,6 +19,19 @@ import JapaneseSyntax._
 "としょかん".transliterate()
 "目標".transliterate()
 
+"郵便局".toHiragana()
+"郵便局".syllabify
+println("priting furigana")
+"郵便局".furigana()
+
+
+"郵便局".containsHiragana
+
+
+//sjt.Kana.vowels
+val ys = sjt.Kana.yoon
+println(ys.head.extendVowel())
+
 Kana.isTranslateableSymbol("。")
 Kana.translateableSymbolsStr
 def printDebug(s: String): Unit = {
